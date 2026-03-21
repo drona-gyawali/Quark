@@ -1,6 +1,6 @@
 import dotenv from "dotenv";
 import { UnstructuredClient } from "unstructured-client";
-import { ClientException } from "./exec.ts";
+import { ClientException } from "../pipeline-processing/exec.ts";
 import { QdrantClient } from "@qdrant/js-client-rest";
 import OpenAI from "openai";
 import { VoyageAIClient } from "voyageai";

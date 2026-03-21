@@ -13,7 +13,7 @@ import type {
   mem0RequestSearch,
   RetrivalRequest,
 } from "./pipeline.js";
-import { env } from "./conf.ts";
+import { env } from "../conf/conf.ts";
 import { generateEmbedding, mem0Search, mem0Add } from "./utils.ts";
 import { RetrivalExecption } from "./exec.ts";
 import { SIMILARITY_THRESHOLD, VECTOR_LIMIT } from "./consts.ts";

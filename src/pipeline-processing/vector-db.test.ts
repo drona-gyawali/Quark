@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
-vi.mock("./conf.ts", () => ({
+vi.mock("../conf/conf.ts", () => ({
   vector: vi.fn(),
 }));
 
@@ -26,7 +26,7 @@ import {
   dumpToDb,
   getRelevantContext,
 } from "./vector-db.ts";
-import { vector } from "./conf.ts";
+import { vector } from "../conf/conf.ts";
 import { reRank } from "./utils.ts";
 
 const makeVectorClient = (overrides: Record<string, any> = {}) => ({

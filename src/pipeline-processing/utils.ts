@@ -1,7 +1,7 @@
 import { Strategy } from "unstructured-client/sdk/models/shared";
 import { MAXCHAR, BATCHSIZE, limit, mem0Limit } from "./consts.ts";
 import { PipelineException, RetrivalExecption } from "./exec.ts";
-import { unstructured, env, embedding, memoClient } from "./conf.ts";
+import { unstructured, env, embedding, memoClient } from "../conf/conf.ts";
 import {
   getStaticPrompt,
   isBase64,

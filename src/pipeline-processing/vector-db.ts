@@ -1,5 +1,5 @@
 import type { RerankResponseDataItem } from "voyageai";
-import { vector } from "./conf.ts";
+import { vector } from "../conf/conf.ts";
 import { DatabaseExecption } from "./exec.ts";
 import type { Tags } from "./pipeline.js";
 import { reRank } from "./utils.ts";
