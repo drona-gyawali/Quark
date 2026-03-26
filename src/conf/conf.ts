@@ -7,7 +7,9 @@ import { VoyageAIClient } from "voyageai";
 import { MemoryClient } from "mem0ai";
 import { createClient } from "redis";
 import { z } from "zod";
+import { S3 } from "@aws-sdk/client-s3";
 import { logger } from "../conf/logger.ts";
+import { OBJECT_ENDPOINT, OBJECT_REGION } from "./const.ts";
 
 dotenv.config();
 
@@ -39,6 +41,16 @@ const envSchema = z.object({
   // Memory & Cache
   MEM0_API: z.string().optional(),
   REDIS_URL: z.string().url(),
+
+  // Superbase Service
+  SUPERBASE_URL: z.string().url(),
+  SUPERBASE_KEY: z.string(),
+  SUPERBASE_DEV_KEY: z.string(),
+
+  // Object Service
+  OBJECT_NAME:z.string(),
+  OBJECT_ID:z.string(),
+  OBJECT_ACCESS_KEY:z.string(),
 });
 
 // Parse process.env and export the validated object
@@ -148,3 +160,21 @@ export const connectRedis = async () => {
 };
 
 await connectRedis();
+
+export const storage = () => {
+  try {
+    const _obj =  new S3({
+      endpoint: OBJECT_ENDPOINT,
+      region: OBJECT_REGION,
+      credentials: {
+        accessKeyId: env.OBJECT_ID,
+        secretAccessKey: env.OBJECT_ACCESS_KEY,
+      },
+      forcePathStyle: true
+    })
+    return _obj
+  }catch (error) {
+    logger.error(`Object storage initilization error ${error}`)
+  }
+}
+
