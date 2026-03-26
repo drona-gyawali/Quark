@@ -48,9 +48,9 @@ const envSchema = z.object({
   SUPERBASE_DEV_KEY: z.string(),
 
   // Object Service
-  OBJECT_NAME:z.string(),
-  OBJECT_ID:z.string(),
-  OBJECT_ACCESS_KEY:z.string(),
+  OBJECT_NAME: z.string(),
+  OBJECT_ID: z.string(),
+  OBJECT_ACCESS_KEY: z.string(),
 });
 
 // Parse process.env and export the validated object
@@ -163,18 +163,17 @@ await connectRedis();
 
 export const storage = () => {
   try {
-    const _obj =  new S3({
+    const _obj = new S3({
       endpoint: OBJECT_ENDPOINT,
       region: OBJECT_REGION,
       credentials: {
         accessKeyId: env.OBJECT_ID,
         secretAccessKey: env.OBJECT_ACCESS_KEY,
       },
-      forcePathStyle: true
-    })
-    return _obj
-  }catch (error) {
-    logger.error(`Object storage initilization error ${error}`)
+      forcePathStyle: true,
+    });
+    return _obj;
+  } catch (error) {
+    logger.error(`Object storage initilization error ${error}`);
   }
-}
-
+};

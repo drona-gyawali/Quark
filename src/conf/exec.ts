@@ -6,7 +6,6 @@ export class SuperBaseException extends Error {
   }
 }
 
-
 export class StorageException extends Error {
   constructor(msg: string) {
     super(msg);
@@ -14,7 +13,6 @@ export class StorageException extends Error {
     Object.setPrototypeOf(this, StorageException.prototype);
   }
 }
-
 
 export class APIException extends Error {
   constructor(msg: string) {
