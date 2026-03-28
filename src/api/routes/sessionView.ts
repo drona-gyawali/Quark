@@ -34,11 +34,12 @@ export const SessionView = new Elysia({ prefix: "/session" })
             label: t.String()
         })
     })
-    .onError(({ error, set }) => {
+    .onError(({ code,error, set }) => {
         set.status = 500;
         logger.error(`Error occured in Sessions API | ${error}`)
         return { 
             success: false, 
-            error: "Internal Server Error" 
+            error: "Internal Server Error",
+            code: code 
         };
     });

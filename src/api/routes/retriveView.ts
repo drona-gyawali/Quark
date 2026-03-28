@@ -6,8 +6,8 @@ import { deleteChats } from "../../service/chat.ts";
 export const RetriveView = new Elysia({ prefix: "/chat", })
     .get("/history/:sessionId" ,async ({ params: { sessionId }, query, set }) => {
         try {
-            const page = parseInt(query.page || "0")
-
+            const parsedPage = parseInt(query.page ?? "0")
+            const page = Number.isInteger(parsedPage) && parsedPage >= 0 ? parsedPage : 0;
             const result = await viewChats({
                 sessionId: String(sessionId),
                 page: page,
@@ -20,7 +20,7 @@ export const RetriveView = new Elysia({ prefix: "/chat", })
             set.status = 500;
             return {
                 success: false,
-                error: error?.message ?? "Internal Server Error"
+                error: "Internal Server Error"
             };
         }
     })
@@ -37,7 +37,7 @@ export const RetriveView = new Elysia({ prefix: "/chat", })
             set.status = 500;
             return {
                 success: false,
-                error: error?.message ?? "Internal Server Error"
+                error: "Internal Server Error"
             };
         }
     })
@@ -62,7 +62,7 @@ export const RetriveView = new Elysia({ prefix: "/chat", })
             set.status = 500;
             return {
                 success: false,
-                error: error?.message ?? "Internal Server Error"
+                error: "Internal Server Error"
             };
         }
     }, {

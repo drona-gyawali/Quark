@@ -9,7 +9,7 @@ import {
 } from "../conf/const.ts";
 import { StorageException } from "../conf/exec.ts";
 import { logger } from "../conf/logger.ts";
-import type { Key } from "../lib/lib.js";
+import type { Key } from "../lib/lib.ts";
 
 export const createPresignedUrl = async (genKey: Key) => {
   try {

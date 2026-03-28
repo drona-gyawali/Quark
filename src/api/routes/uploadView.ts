@@ -11,7 +11,7 @@ export const UploadView = new Elysia({prefix: "/ingest"},)
             return { error: _res.SizeError ?? _res.TypeError }
         } 
         set.status = 200
-        logger.info(`Temporary Uplaod url has been created sucessfully ${_res.key}`)
+        logger.info(`Temporary Uplaod url has been created sucessfully`)
         return {"uploadData": _res}
     }, {
         body: KeySchema
