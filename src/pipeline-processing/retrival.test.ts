@@ -20,7 +20,7 @@ vi.mock("./utils.ts", () => ({
   mem0Add: vi.fn(),
 }));
 
-vi.mock("./conf.ts", () => ({
+vi.mock("../conf/conf.ts", () => ({
   env: { COLLECTION_NAME: "test-collection" },
 }));
 

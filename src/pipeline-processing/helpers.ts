@@ -8,12 +8,11 @@ import {
 } from "./consts.ts";
 
 import { ClientException, PipelineException } from "./exec.ts";
-import { llm, env } from "./conf.ts";
+import { llm, env, redis } from "../conf/conf.ts";
 import type { Tags, DocumentElement, ChatMessage } from "./pipeline.ts";
 import crypto from "node:crypto";
 import { marked } from "marked";
 import prompts from "./prompts.json" with { type: "json" };
-import { redis } from "./conf.ts";
 import { logger } from "../conf/logger.ts";
 
 export const getStaticPrompt = (eleType: string) => {

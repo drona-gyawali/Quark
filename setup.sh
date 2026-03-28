@@ -8,7 +8,7 @@ RED='\033[0;31m'
 NC='\033[0m' 
 
 echo -e "${BLUE}=======================================================${NC}"
-echo -e "${GREEN}     QUARK: Talk to your docs. No fluff, just facts.  ${NC}"
+echo -e "${GREEN}      QUARK: Talk to your docs. No fluff, just facts.   ${NC}"
 echo -e "${BLUE}=======================================================${NC}"
 
 # 1. Handle .env file
@@ -25,25 +25,23 @@ else
     echo -e "${YELLOW} .env already exists. Skipping copy.${NC}"
 fi
 
+# Load variables from .env
+export $(grep -v '^#' .env | xargs)
+
 # 2. Setup Python Virtual Environment
 echo -e "\n${BLUE}Setting up Python Virtual Environment...${NC}"
 if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "win32" || "$OSTYPE" == "cygwin" ]]; then
-    # Windows paths
     python -m venv venv
     source venv/Scripts/activate
 else
-    # Linux/macOS paths
     python3 -m venv venv
     source venv/bin/activate
 fi
 
-# Install Python requirements
 if [ -f requirements.txt ]; then
     pip install --upgrade pip
     pip install -r requirements.txt
     echo -e "${GREEN}✔ Python dependencies installed.${NC}"
-else
-    echo -e "${YELLOW}⚠ requirements.txt not found. Skipping pip install.${NC}"
 fi
 
 # 3. Setup Node.js Dependencies
@@ -56,7 +54,26 @@ else
     exit 1
 fi
 
-# 4. Final Verification
+# 4. Database Migrations (NEW SECTION)
+echo -e "\n${BLUE}Applying Database Migrations...${NC}"
+
+if [ -z "$SUPABASE_DB_URL" ]; then
+    echo -e "${YELLOW}⚠ SUPABASE_DB_URL not found in .env. Skipping migrations.${NC}"
+else
+    if command -v psql &> /dev/null; then
+        # Loop through all .sql files in migrations folder
+        for f in supabase/migrations/*.sql; do
+            echo -e "${YELLOW}Applying $f...${NC}"
+            psql "$SUPABASE_DB_URL" -f "$f" > /dev/null
+        done
+        echo -e "${GREEN}✔ All migrations applied successfully.${NC}"
+    else
+        echo -e "${RED}✘ psql not found. Please install postgresql-client to sync the database.${NC}"
+        echo -e "${YELLOW}Hint: sudo apt install postgresql-client${NC}"
+    fi
+fi
+
+# 5. Final Verification
 echo -e "\n${BLUE}Running tests to confirm setup...${NC}"
 npm test
 
@@ -64,11 +81,9 @@ if [ $? -eq 0 ]; then
     echo -e "\n${GREEN}=======================================${NC}"
     echo -e "${GREEN}   SUCCESS: QUARK IS READY TO GO!      ${NC}"
     echo -e "${GREEN}=======================================${NC}"
-    echo -e "${YELLOW}Action Required: Please fill in the placeholders in your .env file.${NC}"
-    echo -e "Check Voyage AI, Qdrant, and Unstructured for your free API keys."
+    echo -e "${YELLOW}Action Required: Ensure your .env keys are correct.${NC}"
 else
     echo -e "\n${RED}=======================================${NC}"
     echo -e "${RED}   SETUP FINISHED WITH TEST ERRORS     ${NC}"
     echo -e "${RED}=======================================${NC}"
-    echo -e "${YELLOW}Review the logs above. Most likely, problem is with dependencies or .env configuration.${NC}"
 fi

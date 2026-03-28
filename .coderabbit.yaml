@@ -1,0 +1,41 @@
+# .coderabbit.yaml
+language: "en-US"
+
+reviews:
+  profile: "chill"
+  high_level_summary: true
+  poem: false
+  
+  # Prevents CodeRabbit from being too "chatty" on draft work
+  auto_review:
+    auto_reply: true
+    drafts: false
+
+  # Focus on logic, ignore the boilerplate
+  path_filters:
+    - "!**/node_modules/**"
+    - "!**/dist/**"
+    - "!**/migrations/**"
+    - "!**.md"
+    - "!package-lock.json"
+
+chat:
+  enabled: true
+
+# The "Robust" Logic Engine
+instructions: >
+  **CRITICAL PRIORITY: Core Logic & Performance Over Syntax**
+  
+  1. **Ignore Minor Typing:** Do not report on 'any' types, missing type definitions, or simple TypeScript type mismatches unless they lead to a guaranteed runtime crash.
+  
+  2. **Backend & Security:** - Audit for security vulnerabilities, specifically SQL injection, broken access control, and insecure P2P/WebRTC handshakes.
+     - Ensure REST endpoints are idempotent where necessary and follow standard HTTP status code conventions.
+     - Check for unoptimized database queries (N+1 problems) and suggest Redis caching strategies for heavy read operations.
+  
+  3. **Resource Management:** - Identify potential memory leaks, especially in codebase.
+     - Look for unclosed database sessions or file handles.
+  
+  4. **Frontend & UI:** - Suggest performance optimizations such as memoization (`useMemo`, `useCallback`) only where re-renders are expensive.
+     - Evaluate UI patterns against a "monochrome/minimalist" aesthetic (Zinc/White) for consistency and clean spacing.
+  
+  5. **Actionable Feedback:** For every issue found, provide a "Better Way" code snippet demonstrating the optimized logic or the security fix.

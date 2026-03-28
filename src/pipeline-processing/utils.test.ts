@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
-vi.mock("./conf.ts", () => ({
+vi.mock("../conf/conf.ts", () => ({
   unstructured: vi.fn(),
   env: {
     LLM_MODEL: "gpt-4o",
@@ -79,7 +79,7 @@ import {
   mem0Add,
 } from "./utils.ts";
 
-import { unstructured, embedding, memoClient } from "./conf.ts";
+import { unstructured, embedding, memoClient } from "../conf/conf.ts";
 import { dumpToDb, ensureCollectionExists } from "./vector-db.ts";
 import {
   llmResponse,

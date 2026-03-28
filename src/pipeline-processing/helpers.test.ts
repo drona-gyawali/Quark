@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
-vi.mock("./conf.ts", () => ({
+vi.mock("../conf/conf.ts", () => ({
   llm: vi.fn(),
   env: { LLM_MODEL: "gpt-4o" },
   redis: {
@@ -76,8 +76,8 @@ import {
   handleMemoryCompression,
 } from "./helpers.ts";
 
-import { redis } from "./conf.ts";
-import { llm } from "./conf.ts";
+import { redis } from "../conf/conf.ts";
+import { llm } from "../conf/conf.ts";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
