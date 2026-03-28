@@ -29,7 +29,7 @@ export const createPresignedUrl = async (genKey: Key) => {
     const command = new PutObjectCommand({
       Bucket: env.OBJECT_NAME,
       Key: key,
-      ContentType: genKey.contentType
+      ContentType: genKey.contentType,
     });
     const s3Client = storage();
     if (!s3Client) {
