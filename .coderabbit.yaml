@@ -4,12 +4,12 @@ language: "en-US"
 reviews:
   profile: "chill"
   high_level_summary: true
-  poetic_summary: false
+  poem: false
   
   # Prevents CodeRabbit from being too "chatty" on draft work
   auto_review:
-    enabled: true
-    draft: false
+    auto_reply: true
+    drafts: false
 
   # Focus on logic, ignore the boilerplate
   path_filters:

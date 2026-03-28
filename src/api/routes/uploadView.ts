@@ -6,6 +6,10 @@ import { logger } from "../../conf/logger.ts";
 export const UploadView = new Elysia({prefix: "/ingest"},)
     .post("/upload/url", async ({body, set}) => {
         const _res = await createPresignedUrl(body)
+        if("SizeError" in _res ||"TypeError" in _res) {
+            set.status = 400
+            return { error: _res.SizeError ?? _res.TypeError }
+        } 
         set.status = 200
         logger.info(`Temporary Uplaod url has been created sucessfully ${_res.key}`)
         return {"uploadData": _res}
@@ -15,7 +19,7 @@ export const UploadView = new Elysia({prefix: "/ingest"},)
     .onError(({code, error,set}) => {
         set.status = 500
         logger.error(`Error Occred while creating upload url : ${error}`)
-        return {error: error, code: code}
+        return {error: "Internal Server Error", code: code}
     })
     
     

@@ -39,6 +39,6 @@ export const SessionView = new Elysia({ prefix: "/session" })
         logger.error(`Error occured in Sessions API | ${error}`)
         return { 
             success: false, 
-            error: error || "Internal Server Error" 
+            error: "Internal Server Error" 
         };
     });

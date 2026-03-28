@@ -32,7 +32,7 @@ export const ingestion_helper = async (ingest: IngestionHelper) => {
       filename: ingest.filename,
       status: "processing",
       chunks: _docIngest.totalChunks,
-      visualChunks: _docIngest.visualChunks,
+      visual_chunks: _docIngest.visualChunks,
       metadata: metadata,
       session_id: ingest.session_id,
     });

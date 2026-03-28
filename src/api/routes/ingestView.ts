@@ -13,5 +13,5 @@ export const IngestRoutes = new Elysia({prefix: "/ingest", })
     })
     .onError(({code ,error, set}) => {
         set.status = 500
-        return {error: error, code: code}
+        return {error: "Internal Server Error", code: code}
     })

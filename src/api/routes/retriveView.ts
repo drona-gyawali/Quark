@@ -26,7 +26,11 @@ export const RetriveView = new Elysia({ prefix: "/chat", })
     })
     .delete("/:sessionId", async ({params: {sessionId}, set}) => {
         try {
-            await deleteChats(sessionId)
+            const isDeleted = await deleteChats(sessionId)
+            if(!isDeleted) {
+                set.status=400
+                return {error: "Session deletion failed"}
+            }
             set.status=204
             return
         }catch (error: any) {

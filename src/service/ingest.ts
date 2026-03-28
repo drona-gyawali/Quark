@@ -7,7 +7,16 @@ export interface IngestLog {
   session_id: string;
   filename: string;
   chunks: number;
-  visualChunks: number;
+  visual_chunks: number;
+  status: string | null;
+  err_msg?: string;
+  metadata?: Json | null;
+}
+
+export interface UpdateLog {
+  filename: string;
+  chunks: number;
+  visual_chunks: number;
   status: string | null;
   err_msg?: string;
   metadata?: Json | null;
@@ -22,7 +31,7 @@ export const createIngestLog = async (logs: IngestLog) => {
           session_id: logs.session_id,
           filename: logs.filename,
           chunks: logs.chunks,
-          visual_chunks: logs.visualChunks,
+          visual_chunks: logs.visual_chunks,
           status: logs.status,
           err_msg: logs.err_msg,
           metadata: logs.metadata,
@@ -50,7 +59,7 @@ export const createIngestLog = async (logs: IngestLog) => {
   }
 };
 
-export const updateIngestLog = async (logs: IngestLog, ingestId: string) => {
+export const updateIngestLog = async (logs: UpdateLog, ingestId: string) => {
   try {
     const { data, error } = await db
       .from("ingest_log")
@@ -70,10 +79,10 @@ export const updateIngestLog = async (logs: IngestLog, ingestId: string) => {
     return data;
   } catch (error) {
     logger.error(
-      `Error occured while ingesting file for ${logs.session_id} :  ${error}`,
+      `Error occured while ingesting file for ${logs.filename} :  ${error}`,
     );
     throw new SuperBaseException(
-      `Error occured while ingesting file for for ${logs.session_id} : ${error}`,
+      `Error occured while ingesting file for for ${logs.filename} : ${error}`,
     );
   }
 };

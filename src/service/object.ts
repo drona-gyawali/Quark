@@ -1,4 +1,3 @@
-import type { S3 } from "@aws-sdk/client-s3";
 import { GetObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
 import { storage, env } from "../conf/conf.ts";
 import { generateKey } from "./utils.ts";
@@ -31,7 +30,11 @@ export const createPresignedUrl = async (genKey: Key) => {
       Bucket: env.OBJECT_NAME,
       Key: key,
     });
-    const s3Client = storage() as S3;
+    const s3Client = storage();
+    if (!s3Client) {
+      logger.error(`S3 Client Initalization failed`);
+      throw new StorageException(`S3 Client Initalization failed`);
+    }
     const signedUrl = await getSignedUrl(s3Client, command, {
       expiresIn: SIGNED_URL_EXPIRES,
     });
@@ -50,7 +53,11 @@ export const getFile = async (key: string) => {
       Bucket: env.OBJECT_NAME,
       Key: key,
     });
-    const s3Client = storage() as S3;
+    const s3Client = storage();
+    if (!s3Client) {
+      logger.error(`S3 Client Initalization failed`);
+      throw new StorageException(`S3 Client Initalization failed`);
+    }
     const response = await s3Client.send(command);
     if (!response?.Body) {
       logger.error(
