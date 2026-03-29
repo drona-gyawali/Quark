@@ -1,10 +1,17 @@
 import { createSession, deleteSession, updateSession, getSession } from "../../service/session.ts";
-import {Elysia, t} from "elysia";
+import {Elysia, t,} from "elysia";
 import { logger } from "../../conf/logger.ts";
+import  type { User } from "@supabase/supabase-js";
+
 
 export const SessionView = new Elysia({ prefix: "/session" })
-    .get("/:userId", async ({ params: { userId }, set }) => {
-        const res = await getSession(userId)
+    .decorate('user', null as unknown as User | null)
+    .get("/", async ({ user, set }) => {
+        if(!user) {
+            set.status = 401
+            return {error: "Unauthorized Access"}
+        }
+        const res = await getSession(user.id)
         set.status = 200;
         return res;
     })
@@ -22,7 +29,12 @@ export const SessionView = new Elysia({ prefix: "/session" })
             label:t.String()
         })
     })
-    .post("/:userId", async ({ params: { userId }, body, set }) => {
+    .post("/", async ({ user, body, set }) => {
+        if(!user) {
+            set.status = 401
+            return {error: "Unauthorized Access"}
+        }
+        const userId = user.id
         const res = await createSession({
             user_id: userId,
             label: body.label

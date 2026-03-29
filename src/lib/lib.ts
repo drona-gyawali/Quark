@@ -1,4 +1,6 @@
-import { t, type Static } from "elysia";
+import { t } from "elysia";
+import type { Context, Static } from "elysia";
+import type { User } from "@supabase/supabase-js";
 
 export const IngestionSchema = t.Object({
   key: t.String(),
@@ -25,3 +27,5 @@ export const ChatViewSchema = t.Object({
 });
 
 export type ChatView = Static<typeof ChatViewSchema>;
+
+export type AuthContext = Context & { user: User | null };

@@ -1,0 +1,575 @@
+diff --git a/database.types.ts b/database.types.ts
+new file mode 100644
+index 0000000..05acc95
+--- /dev/null
++++ b/database.types.ts
+@@ -0,0 +1,295 @@
++export type Json =
++  | string
++  | number
++  | boolean
++  | null
++  | { [key: string]: Json | undefined }
++  | Json[]
++
++export type Database = {
++  // Allows to automatically instantiate createClient with right options
++  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
++  __InternalSupabase: {
++    PostgrestVersion: "14.4"
++  }
++  public: {
++    Tables: {
++      chat_log: {
++        Row: {
++          content: string
++          created_at: string
++          id: string
++          role: string
++          session_id: string
++        }
++        Insert: {
++          content: string
++          created_at?: string
++          id?: string
++          role: string
++          session_id: string
++        }
++        Update: {
++          content?: string
++          created_at?: string
++          id?: string
++          role?: string
++          session_id?: string
++        }
++        Relationships: [
++          {
++            foreignKeyName: "chat_log_session_id_fkey"
++            columns: ["session_id"]
++            isOneToOne: false
++            referencedRelation: "sessions"
++            referencedColumns: ["id"]
++          },
++        ]
++      }
++      ingest_log: {
++        Row: {
++          chunks: number | null
++          created_at: string
++          err_msg: string | null
++          filename: string
++          id: string
++          metadata: Json | null
++          session_id: string
++          status: string | null
++          visual_chunks: number | null
++        }
++        Insert: {
++          chunks?: number | null
++          created_at?: string
++          err_msg?: string | null
++          filename: string
++          id?: string
++          metadata?: Json | null
++          session_id: string
++          status?: string | null
++          visual_chunks?: number | null
++        }
++        Update: {
++          chunks?: number | null
++          created_at?: string
++          err_msg?: string | null
++          filename?: string
++          id?: string
++          metadata?: Json | null
++          session_id?: string
++          status?: string | null
++          visual_chunks?: number | null
++        }
++        Relationships: [
++          {
++            foreignKeyName: "ingest_log_session_id_fkey"
++            columns: ["session_id"]
++            isOneToOne: false
++            referencedRelation: "sessions"
++            referencedColumns: ["id"]
++          },
++        ]
++      }
++      profiles: {
++        Row: {
++          avatar_url: string | null
++          created_at: string
++          display_name: string | null
++          email: string | null
++          id: string
++          is_locked: boolean | null
++          token_limit: number | null
++        }
++        Insert: {
++          avatar_url?: string | null
++          created_at?: string
++          display_name?: string | null
++          email?: string | null
++          id: string
++          is_locked?: boolean | null
++          token_limit?: number | null
++        }
++        Update: {
++          avatar_url?: string | null
++          created_at?: string
++          display_name?: string | null
++          email?: string | null
++          id?: string
++          is_locked?: boolean | null
++          token_limit?: number | null
++        }
++        Relationships: []
++      }
++      sessions: {
++        Row: {
++          created_at: string
++          id: string
++          label: string | null
++          last_active: string
++          user_id: string
++        }
++        Insert: {
++          created_at?: string
++          id?: string
++          label?: string | null
++          last_active?: string
++          user_id: string
++        }
++        Update: {
++          created_at?: string
++          id?: string
++          label?: string | null
++          last_active?: string
++          user_id?: string
++        }
++        Relationships: [
++          {
++            foreignKeyName: "sessions_user_id_fkey"
++            columns: ["user_id"]
++            isOneToOne: false
++            referencedRelation: "profiles"
++            referencedColumns: ["id"]
++          },
++        ]
++      }
++    }
++    Views: {
++      [_ in never]: never
++    }
++    Functions: {
++      get_paginated_chat_v1: {
++        Args: { p_page?: number; p_page_size?: number; p_session_id: string }
++        Returns: Json
++      }
++    }
++    Enums: {
++      [_ in never]: never
++    }
++    CompositeTypes: {
++      [_ in never]: never
++    }
++  }
++}
++
++type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
++
++type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
++
++export type Tables<
++  DefaultSchemaTableNameOrOptions extends
++    | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
++    | { schema: keyof DatabaseWithoutInternals },
++  TableName extends DefaultSchemaTableNameOrOptions extends {
++    schema: keyof DatabaseWithoutInternals
++  }
++    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
++        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
++    : never = never,
++> = DefaultSchemaTableNameOrOptions extends {
++  schema: keyof DatabaseWithoutInternals
++}
++  ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
++      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
++      Row: infer R
++    }
++    ? R
++    : never
++  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
++        DefaultSchema["Views"])
++    ? (DefaultSchema["Tables"] &
++        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
++        Row: infer R
++      }
++      ? R
++      : never
++    : never
++
++export type TablesInsert<
++  DefaultSchemaTableNameOrOptions extends
++    | keyof DefaultSchema["Tables"]
++    | { schema: keyof DatabaseWithoutInternals },
++  TableName extends DefaultSchemaTableNameOrOptions extends {
++    schema: keyof DatabaseWithoutInternals
++  }
++    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
++    : never = never,
++> = DefaultSchemaTableNameOrOptions extends {
++  schema: keyof DatabaseWithoutInternals
++}
++  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
++      Insert: infer I
++    }
++    ? I
++    : never
++  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
++    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
++        Insert: infer I
++      }
++      ? I
++      : never
++    : never
++
++export type TablesUpdate<
++  DefaultSchemaTableNameOrOptions extends
++    | keyof DefaultSchema["Tables"]
++    | { schema: keyof DatabaseWithoutInternals },
++  TableName extends DefaultSchemaTableNameOrOptions extends {
++    schema: keyof DatabaseWithoutInternals
++  }
++    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
++    : never = never,
++> = DefaultSchemaTableNameOrOptions extends {
++  schema: keyof DatabaseWithoutInternals
++}
++  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
++      Update: infer U
++    }
++    ? U
++    : never
++  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
++    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
++        Update: infer U
++      }
++      ? U
++      : never
++    : never
++
++export type Enums<
++  DefaultSchemaEnumNameOrOptions extends
++    | keyof DefaultSchema["Enums"]
++    | { schema: keyof DatabaseWithoutInternals },
++  EnumName extends DefaultSchemaEnumNameOrOptions extends {
++    schema: keyof DatabaseWithoutInternals
++  }
++    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
++    : never = never,
++> = DefaultSchemaEnumNameOrOptions extends {
++  schema: keyof DatabaseWithoutInternals
++}
++  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
++  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
++    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
++    : never
++
++export type CompositeTypes<
++  PublicCompositeTypeNameOrOptions extends
++    | keyof DefaultSchema["CompositeTypes"]
++    | { schema: keyof DatabaseWithoutInternals },
++  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
++    schema: keyof DatabaseWithoutInternals
++  }
++    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
++    : never = never,
++> = PublicCompositeTypeNameOrOptions extends {
++  schema: keyof DatabaseWithoutInternals
++}
++  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
++  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
++    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
++    : never
++
++export const Constants = {
++  public: {
++    Enums: {},
++  },
++} as const
+diff --git a/package-lock.json b/package-lock.json
+index 002b5f3..d64ec11 100644
+--- a/package-lock.json
++++ b/package-lock.json
+@@ -12,6 +12,7 @@
+       "dependencies": {
+         "@aws-sdk/client-s3": "^3.1014.0",
+         "@aws-sdk/s3-request-presigner": "^3.1014.0",
++        "@elysiajs/cors": "^1.4.1",
+         "@elysiajs/node": "^1.4.5",
+         "@qdrant/js-client-rest": "^1.13.0",
+         "@supabase/supabase-js": "^2.99.3",
+@@ -1299,6 +1300,15 @@
+         "@jridgewell/sourcemap-codec": "^1.4.10"
+       }
+     },
++    "node_modules/@elysiajs/cors": {
++      "version": "1.4.1",
++      "resolved": "https://registry.npmjs.org/@elysiajs/cors/-/cors-1.4.1.tgz",
++      "integrity": "sha512-lQfad+F3r4mNwsxRKbXyJB8Jg43oAOXjRwn7sKUL6bcOW3KjUqUimTS+woNpO97efpzjtDE0tEjGk9DTw8lqTQ==",
++      "license": "MIT",
++      "peerDependencies": {
++        "elysia": ">= 1.4.0"
++      }
++    },
+     "node_modules/@elysiajs/node": {
+       "version": "1.4.5",
+       "resolved": "https://registry.npmjs.org/@elysiajs/node/-/node-1.4.5.tgz",
+diff --git a/package.json b/package.json
+index fd4f2e3..f697203 100644
+--- a/package.json
++++ b/package.json
+@@ -57,6 +57,7 @@
+   "dependencies": {
+     "@aws-sdk/client-s3": "^3.1014.0",
+     "@aws-sdk/s3-request-presigner": "^3.1014.0",
++    "@elysiajs/cors": "^1.4.1",
+     "@elysiajs/node": "^1.4.5",
+     "@qdrant/js-client-rest": "^1.13.0",
+     "@supabase/supabase-js": "^2.99.3",
+diff --git a/src/api/middleware/auth.ts b/src/api/middleware/auth.ts
+new file mode 100644
+index 0000000..ef44d8e
+--- /dev/null
++++ b/src/api/middleware/auth.ts
+@@ -0,0 +1,23 @@
++import {Elysia} from "elysia"
++import { db } from "../../lib/superbase.ts";
++
++
++export const auth = new Elysia({name: 'auth'})
++	.derive({as: 'global'}, async ({request, set}) => {
++		const authHeader = request.headers.get('authorization')
++
++		if(!authHeader || !authHeader.startsWith("Bearer")) {
++			set.status = 401;
++			return {error: "Missing authorization header"}
++		}
++
++		const token = authHeader.split(' ')[1]
++		const {data: {user}, error} = await db.auth.getUser(token)
++
++		if(!user || error) {
++			set.status = 401;
++			return {error : "Unauthorized Access denied"}
++		}
++
++		return {user}
++	})
+\ No newline at end of file
+diff --git a/src/api/routes/retriveView.ts b/src/api/routes/retriveView.ts
+index 47edb37..8f720db 100644
+--- a/src/api/routes/retriveView.ts
++++ b/src/api/routes/retriveView.ts
+@@ -2,8 +2,10 @@ import { Elysia, t } from "elysia";
+ import { retriver_helper } from "../utils.ts";
+ import { viewChats } from "../../service/chat.ts";
+ import { deleteChats } from "../../service/chat.ts";
++import type { User } from "@supabase/supabase-js";
+ 
+ export const RetriveView = new Elysia({ prefix: "/chat", })
++    .decorate('user', null as unknown as User | null)
+     .get("/history/:sessionId" ,async ({ params: { sessionId }, query, set }) => {
+         try {
+             const parsedPage = parseInt(query.page ?? "0")
+@@ -41,16 +43,21 @@ export const RetriveView = new Elysia({ prefix: "/chat", })
+             };
+         }
+     })
+-    .post("/completions", async ({ body, set }) => {
++    .post("/completions", async ({ user , body, set }) => {
+         try {
++            if(!user) {
++                set.status = 401
++                return {error: "Unauthorized Access"}
++            }
++            const userId = user.id
+             const result = await retriver_helper(
+                 { 
+                     message: body.message, 
+                     sessionId: body.sessionId,
+                     filters: { institution: body.institution, mode: 0 } 
+                 } as any,
+-                { message: body.message, userId: body.userId, sessionId: body.sessionId } as any,
+-                { message: body.message, userId: body.userId, sessionId: body.sessionId, query: body.message, response: "" } as any
++                { message: body.message, userId: userId, sessionId: body.sessionId } as any,
++                { message: body.message, userId: userId, sessionId: body.sessionId, query: body.message, response: "" } as any
+             );
+ 
+             return {
+@@ -69,7 +76,6 @@ export const RetriveView = new Elysia({ prefix: "/chat", })
+         body: t.Object({
+             message: t.String(),
+             sessionId: t.String(),
+-            userId: t.String(),
+             institution: t.Optional(t.String())
+         })
+     });
+diff --git a/src/api/routes/sessionView.ts b/src/api/routes/sessionView.ts
+index 04517c2..9487757 100644
+--- a/src/api/routes/sessionView.ts
++++ b/src/api/routes/sessionView.ts
+@@ -1,10 +1,17 @@
+ import { createSession, deleteSession, updateSession, getSession } from "../../service/session.ts";
+-import {Elysia, t} from "elysia";
++import {Elysia, t,} from "elysia";
+ import { logger } from "../../conf/logger.ts";
++import  type { User } from "@supabase/supabase-js";
++
+ 
+ export const SessionView = new Elysia({ prefix: "/session" })
+-    .get("/:userId", async ({ params: { userId }, set }) => {
+-        const res = await getSession(userId)
++    .decorate('user', null as unknown as User | null)
++    .get("/", async ({ user, set }) => {
++        if(!user) {
++            set.status = 401
++            return {error: "Unauthorized Access"}
++        }
++        const res = await getSession(user.id)
+         set.status = 200;
+         return res;
+     })
+@@ -22,7 +29,12 @@ export const SessionView = new Elysia({ prefix: "/session" })
+             label:t.String()
+         })
+     })
+-    .post("/:userId", async ({ params: { userId }, body, set }) => {
++    .post("/", async ({ user, body, set }) => {
++        if(!user) {
++            set.status = 401
++            return {error: "Unauthorized Access"}
++        }
++        const userId = user.id
+         const res = await createSession({
+             user_id: userId,
+             label: body.label
+diff --git a/src/api/routes/uploadView.ts b/src/api/routes/uploadView.ts
+index 28c98ac..5e89c68 100644
+--- a/src/api/routes/uploadView.ts
++++ b/src/api/routes/uploadView.ts
+@@ -2,16 +2,23 @@ import {Elysia} from "elysia";
+ import { createPresignedUrl } from "../../service/object.ts";
+ import  { KeySchema } from "../../lib/lib.ts";
+ import { logger } from "../../conf/logger.ts";
++import type { User } from "@supabase/supabase-js";
+ 
+ export const UploadView = new Elysia({prefix: "/ingest"},)
+-    .post("/upload/url", async ({body, set}) => {
+-        const _res = await createPresignedUrl(body)
++    .decorate('user', null as unknown as User | null)
++    .post("/upload/url", async ({user, body, set}) => {
++        if(!user) {
++            set.status = 401
++            return {error: "Unauthorized Access"}
++        }
++        const user_id = user.id
++        const _res = await createPresignedUrl({...body, user_id})
+         if("SizeError" in _res ||"TypeError" in _res) {
+             set.status = 400
+             return { error: _res.SizeError ?? _res.TypeError }
+         } 
+         set.status = 200
+-        logger.info(`Temporary Uplaod url has been created sucessfully`)
++        logger.info(`Temporary Uplaod url has been created sucessfully for ${user_id}`)
+         return {"uploadData": _res}
+     }, {
+         body: KeySchema
+diff --git a/src/index.ts b/src/index.ts
+index c812b96..cae7c4d 100644
+--- a/src/index.ts
++++ b/src/index.ts
+@@ -5,16 +5,20 @@ import { IngestRoutes } from './api/routes/ingestView.ts'
+ import { UploadView } from './api/routes/uploadView.ts'
+ import { RetriveView } from './api/routes/retriveView.ts'
+ import { SessionView } from './api/routes/sessionView.ts'
++import { auth } from './api/middleware/auth.ts'
++import {cors} from "@elysiajs/cors"
+ 
+ const app = new Elysia({ adapter: node() })
++    .use(cors())
++    .get("/api/v1/health", () => "up ")
+     .group("/api/v1", (app) => 
+         app
++            .use(auth)
+             .use(IngestRoutes)
+             .use(UploadView)
+             .use(RetriveView)
+             .use(SessionView)
+     )
+-    .get("/api/v1/health", () => "i am up ")
+     .listen(3000, ({hostname, port}) => {
+         logger.info(`${hostname}:${port}`)
+     })
+\ No newline at end of file
+diff --git a/src/lib/lib.ts b/src/lib/lib.ts
+index 12303bb..5137a48 100644
+--- a/src/lib/lib.ts
++++ b/src/lib/lib.ts
+@@ -1,4 +1,6 @@
+-import { t, type Static } from "elysia";
++import { t} from "elysia";
++import type { Context, Static } from "elysia";
++import type { User } from '@supabase/supabase-js'
+ 
+ export const IngestionSchema = t.Object({
+   key: t.String(),
+@@ -25,3 +27,5 @@ export const ChatViewSchema = t.Object({
+ });
+ 
+ export type ChatView = Static<typeof ChatViewSchema>;
++
++export type AuthContext = Context & { user: User | null }
+\ No newline at end of file
+diff --git a/supabase/migrations/20260329142732_clean_up_profiles_table.sql b/supabase/migrations/20260329142732_clean_up_profiles_table.sql
+new file mode 100644
+index 0000000..59c7037
+--- /dev/null
++++ b/supabase/migrations/20260329142732_clean_up_profiles_table.sql
+@@ -0,0 +1,34 @@
++-- 1. Remove the old username column
++ALTER TABLE public.profiles 
++DROP COLUMN IF EXISTS username CASCADE;
++
++-- 2. Add the Google-friendly columns
++ALTER TABLE public.profiles 
++ADD COLUMN IF NOT EXISTS display_name text,
++ADD COLUMN IF NOT EXISTS email text,
++ADD COLUMN IF NOT EXISTS avatar_url text;
++
++-- 3. Update the Sync Function
++CREATE OR REPLACE FUNCTION public.handle_new_user()
++RETURNS trigger AS $$
++BEGIN
++  INSERT INTO public.profiles (id, display_name, email, avatar_url)
++  VALUES (
++    new.id, 
++    COALESCE(new.raw_user_meta_data->>'full_name', new.raw_user_meta_data->>'name', 'New User'),
++    new.email,
++    new.raw_user_meta_data->>'avatar_url'
++  )
++  ON CONFLICT (id) DO UPDATE SET
++    display_name = EXCLUDED.display_name,
++    email = EXCLUDED.email,
++    avatar_url = EXCLUDED.avatar_url;
++  RETURN new;
++END;
++$$ LANGUAGE plpgsql SECURITY DEFINER;
++
++-- 4. Ensure the Trigger is active
++DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
++CREATE TRIGGER on_auth_user_created
++  AFTER INSERT ON auth.users
++  FOR EACH ROW EXECUTE PROCEDURE public.handle_new_user();
