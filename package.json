@@ -57,6 +57,7 @@
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1014.0",
     "@aws-sdk/s3-request-presigner": "^3.1014.0",
+    "@elysiajs/cors": "^1.4.1",
     "@elysiajs/node": "^1.4.5",
     "@qdrant/js-client-rest": "^1.13.0",
     "@supabase/supabase-js": "^2.99.3",

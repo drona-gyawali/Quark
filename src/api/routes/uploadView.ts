@@ -2,9 +2,15 @@ import {Elysia} from "elysia";
 import { createPresignedUrl } from "../../service/object.ts";
 import  { KeySchema } from "../../lib/lib.ts";
 import { logger } from "../../conf/logger.ts";
+import type { User } from "@supabase/supabase-js";
 
 export const UploadView = new Elysia({prefix: "/ingest"},)
-    .post("/upload/url", async ({body, set}) => {
+    .decorate('user', null as unknown as User | null)
+    .post("/upload/url", async ({user, body, set}) => {
+        if(!user) {
+            set.status = 401
+            return {error: "Unauthorized Access"}
+        }
         const _res = await createPresignedUrl(body)
         if("SizeError" in _res ||"TypeError" in _res) {
             set.status = 400

@@ -92,25 +92,31 @@ export type Database = {
       };
       profiles: {
         Row: {
+          avatar_url: string | null;
           created_at: string;
+          display_name: string | null;
+          email: string | null;
           id: string;
           is_locked: boolean | null;
           token_limit: number | null;
-          username: string | null;
         };
         Insert: {
+          avatar_url?: string | null;
           created_at?: string;
+          display_name?: string | null;
+          email?: string | null;
           id: string;
           is_locked?: boolean | null;
           token_limit?: number | null;
-          username?: string | null;
         };
         Update: {
+          avatar_url?: string | null;
           created_at?: string;
+          display_name?: string | null;
+          email?: string | null;
           id?: string;
           is_locked?: boolean | null;
           token_limit?: number | null;
-          username?: string | null;
         };
         Relationships: [];
       };
