@@ -11,14 +11,13 @@ export const UploadView = new Elysia({prefix: "/ingest"},)
             set.status = 401
             return {error: "Unauthorized Access"}
         }
-        const user_id = user.id
-        const _res = await createPresignedUrl({...body, user_id})
+        const _res = await createPresignedUrl(body)
         if("SizeError" in _res ||"TypeError" in _res) {
             set.status = 400
             return { error: _res.SizeError ?? _res.TypeError }
         } 
         set.status = 200
-        logger.info(`Temporary Uplaod url has been created sucessfully for ${user_id}`)
+        logger.info(`Temporary Uplaod url has been created sucessfully`)
         return {"uploadData": _res}
     }, {
         body: KeySchema

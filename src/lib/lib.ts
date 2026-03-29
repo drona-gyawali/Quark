@@ -13,7 +13,6 @@ export type IngestionHelper = Static<typeof IngestionSchema>;
 
 export const KeySchema = t.Object({
   filename: t.String(),
-  user_id: t.String(),
   contentType: t.String(),
   contentSize: t.Number(),
 });

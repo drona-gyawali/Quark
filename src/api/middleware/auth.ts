@@ -6,12 +6,16 @@ export const auth = new Elysia({name: 'auth'})
 	.derive({as: 'global'}, async ({request, set}) => {
 		const authHeader = request.headers.get('authorization')
 
-		if(!authHeader || !authHeader.startsWith("Bearer")) {
+		if(!authHeader || !authHeader.startsWith("Bearer ")) {
 			set.status = 401;
 			return {error: "Missing authorization header"}
 		}
 
 		const token = authHeader.split(' ')[1]
+		if(!token) {
+			set.status = 401
+			return {error: "Missing Token"}
+		}
 		const {data: {user}, error} = await db.auth.getUser(token)
 
 		if(!user || error) {

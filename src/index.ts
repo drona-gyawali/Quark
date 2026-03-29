@@ -10,7 +10,7 @@ import {cors} from "@elysiajs/cors"
 
 const app = new Elysia({ adapter: node() })
     .use(cors())
-    .get("/api/v1/health", () => "up ")
+    .get("/api/v1/health", () => "up")
     .group("/api/v1", (app) => 
         app
             .use(auth)
