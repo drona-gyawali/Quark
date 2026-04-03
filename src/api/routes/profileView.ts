@@ -13,7 +13,7 @@ export const profileView = new Elysia({prefix: "/profile"})
 
         const userId = user.id
         const data = await me(userId)
-        if(!data){
+        if(!data.id){
             set.status = 401;
             return {error: "Invalid UserId"}
         }

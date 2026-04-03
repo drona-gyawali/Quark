@@ -7,7 +7,7 @@ import { RetriveView } from './api/routes/retriveView.ts'
 import { SessionView } from './api/routes/sessionView.ts'
 import { auth } from './api/middleware/auth.ts'
 import {cors} from "@elysiajs/cors"
-import { profileView } from './api/routes/profileView.js'
+import { profileView } from './api/routes/profileView.ts'
 
 const app = new Elysia({ adapter: node() })
     .use(cors())

@@ -81,10 +81,13 @@ export const me = async (userId: string) => {
     const { data, error } = await db
       .from("profiles")
       .select("*")
-      .eq("id", userId);
+      .eq("id", userId)
+      .single();
     if (error) {
       logger.error(`User Profile had a error: ${error}`);
-      return error;
+      throw new SuperBaseException(
+        `User Profile had a error: ${error.message}`,
+      );
     }
     return data;
   } catch (error) {
