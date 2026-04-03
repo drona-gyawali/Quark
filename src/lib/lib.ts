@@ -6,7 +6,6 @@ export const IngestionSchema = t.Object({
   key: t.String(),
   filename: t.String(),
   session_id: t.String(),
-  tags: t.Object({}),
 });
 
 export type IngestionHelper = Static<typeof IngestionSchema>;

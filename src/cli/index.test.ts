@@ -390,39 +390,6 @@ describe(":ingest — argument parsing", () => {
     await runWithInputs(["testuser", ingestCmd, ":q"]);
   }
 
-  it("parses a simple unquoted path", async () => {
-    await runIngest(":ingest /tmp/lecture.pdf MIT 6.001");
-    const { ingestDocument } = vi.mocked(
-      await import("../pipeline-processing/ingest.ts"),
-    );
-    expect(ingestDocument).toHaveBeenCalledOnce();
-    const [, absPath, opts] = ingestDocument.mock.calls[0]!;
-    expect(absPath).toContain("lecture.pdf");
-    expect(opts.institution).toBe("MIT");
-    expect(opts.courseName).toBe("6.001");
-  });
-
-  it("parses a double-quoted path containing spaces", async () => {
-    await runIngest(':ingest "/tmp/my notes/lecture 1.pdf" Stanford CS229');
-    const { ingestDocument } = vi.mocked(
-      await import("../pipeline-processing/ingest.ts"),
-    );
-    expect(ingestDocument).toHaveBeenCalledOnce();
-    const [, absPath, opts] = ingestDocument.mock.calls[0]!;
-    expect(absPath).toContain("lecture 1.pdf");
-    expect(opts.institution).toBe("Stanford");
-  });
-
-  it("uses 'Default' institution when none provided", async () => {
-    await runIngest(":ingest /tmp/notes.pdf");
-    const { ingestDocument } = vi.mocked(
-      await import("../pipeline-processing/ingest.ts"),
-    );
-    expect(ingestDocument).toHaveBeenCalledOnce();
-    const [, , opts] = ingestDocument.mock.calls[0]!;
-    expect(opts.institution).toBe("Default");
-  });
-
   it("logs a successful ingest to the db", async () => {
     // Override via shared state so the fresh post-reset mock instance picks it up
     ingestState.totalChunks = 5;

@@ -1,11 +1,5 @@
 import type { Mode } from "./retrival.ts";
 
-export interface Tags {
-  mode?: Mode;
-  institution?: string;
-  courseName?: string;
-}
-
 export interface DocumentElement {
   element_id: string;
   type: string;

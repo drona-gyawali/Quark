@@ -1,7 +1,7 @@
 import { ingestDocument } from "../pipeline-processing/ingest.ts";
 import { retriveContext } from "../pipeline-processing/retrival.ts";
 import { createIngestLog } from "../service/ingest.ts";
-import { APIException } from "../conf/exec.ts";
+import { APIException, SuperBaseException } from "../conf/exec.ts";
 import { getFile } from "../service/object.ts";
 import { logger } from "../conf/logger.ts";
 import { type IngestionHelper } from "../lib/lib.js";
@@ -11,6 +11,7 @@ import type {
   RetrivalRequest,
 } from "../pipeline-processing/pipeline.js";
 import { dumpChatHistory } from "../service/chat.ts";
+import { db } from "../lib/superbase.ts";
 
 export const ingestion_helper = async (ingest: IngestionHelper) => {
   try {
@@ -19,11 +20,7 @@ export const ingestion_helper = async (ingest: IngestionHelper) => {
       logger.error(`Error occured in ingestion API ${bufferFile}`);
       throw new APIException(`Error occured in ingestion API ${bufferFile}`);
     }
-    const _docIngest = await ingestDocument(
-      bufferFile,
-      ingest.filename,
-      ingest.tags,
-    );
+    const _docIngest = await ingestDocument(bufferFile, ingest.filename);
     if (!_docIngest) {
       logger.error(`Error occured in ingestion API ${_docIngest}`);
       throw new APIException(`Error occured in ingestion API ${_docIngest}`);
@@ -76,5 +73,22 @@ export const retriver_helper = async (
     }).catch((err) => logger.error(`Background Error Log Failed: ${err}`));
 
     throw error;
+  }
+};
+
+export const me = async (userId: string) => {
+  try {
+    const { data, error } = await db
+      .from("profiles")
+      .select("*")
+      .eq("id", userId);
+    if (error) {
+      logger.error(`User Profile had a error: ${error}`);
+      return error;
+    }
+    return data;
+  } catch (error) {
+    logger.error(`User Profile had a error: ${error}`);
+    throw new SuperBaseException(`User Profile had a error: ${error}`);
   }
 };
