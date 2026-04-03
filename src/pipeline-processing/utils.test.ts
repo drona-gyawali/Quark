@@ -40,7 +40,7 @@ vi.mock("./helpers.ts", () => ({
   getStaticPrompt: vi.fn((type: string) => `PROMPT_FOR_${type}`),
   isBase64: vi.fn(() => true),
   llmResponse: vi.fn(async () => "mocked visual description"),
-  prepareBatchRecords: vi.fn((elements, vectors, tags, start) =>
+  prepareBatchRecords: vi.fn((elements, vectors, start) =>
     elements.map((_: any, i: number) => ({
       id: `id-${start + i}`,
       vector: vectors[i],
@@ -369,7 +369,6 @@ describe("generateEmbedding", () => {
 
 describe("processMetadata", () => {
   const mockEmbed = vi.fn();
-  const tags = { mode: "study", institution: "MIT", courseName: "6.001" };
 
   beforeEach(() => {
     vi.mocked(embedding).mockReturnValue({
@@ -384,7 +383,7 @@ describe("processMetadata", () => {
 
   it("calls ensureCollectionExists with the collection name", async () => {
     mockEmbed.mockResolvedValue({ data: [{ embedding: [0.1] }] });
-    await processMetadata([makeElement()], tags);
+    await processMetadata([makeElement()]);
     expect(ensureCollectionExists).toHaveBeenCalledWith("test-collection");
   });
 
@@ -394,7 +393,7 @@ describe("processMetadata", () => {
       data: [{ embedding: [0.1, 0.2] }, { embedding: [0.3, 0.4] }],
     });
 
-    await processMetadata(elements, tags);
+    await processMetadata(elements);
     expect(dumpToDb).toHaveBeenCalledOnce();
   });
 
@@ -412,7 +411,7 @@ describe("processMetadata", () => {
       })
       .mockResolvedValueOnce({ data: [{ embedding: [0.3] }] });
 
-    await processMetadata(elements, tags);
+    await processMetadata(elements);
     expect(sleep).toHaveBeenCalledWith(21000);
   });
 
@@ -420,21 +419,21 @@ describe("processMetadata", () => {
     const elements = [makeElement()];
     mockEmbed.mockResolvedValue({ data: [{ embedding: [0.1] }] });
 
-    await processMetadata(elements, tags);
+    await processMetadata(elements);
     expect(sleep).not.toHaveBeenCalled();
   });
 
   it("throws PipelineException when embedding count mismatches batch size", async () => {
     mockEmbed.mockResolvedValue({ data: [] }); // 0 embeddings for 1 element
 
-    await expect(processMetadata([makeElement()], tags)).rejects.toThrow(
+    await expect(processMetadata([makeElement()])).rejects.toThrow(
       "Error while processing metadata",
     );
   });
 
   it("returns { success: true } on completion", async () => {
     mockEmbed.mockResolvedValue({ data: [{ embedding: [0.1] }] });
-    const result = await processMetadata([makeElement()], tags);
+    const result = await processMetadata([makeElement()]);
     expect(result).toEqual({ success: true });
   });
 });

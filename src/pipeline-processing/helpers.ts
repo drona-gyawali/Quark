@@ -9,7 +9,7 @@ import {
 
 import { ClientException, PipelineException } from "./exec.ts";
 import { llm, env, redis } from "../conf/conf.ts";
-import type { Tags, DocumentElement, ChatMessage } from "./pipeline.ts";
+import type { DocumentElement, ChatMessage } from "./pipeline.ts";
 import crypto from "node:crypto";
 import { marked } from "marked";
 import prompts from "./prompts.json" with { type: "json" };
@@ -155,7 +155,6 @@ export const llmResponse = async (
 export const prepareBatchRecords = (
   batchElements: any[],
   vectors: number[][],
-  tags: Tags,
   startIndex: number,
 ) => {
   try {
@@ -167,9 +166,6 @@ export const prepareBatchRecords = (
         ...el.metadata,
         chunkIndex: startIndex + idx,
         isVisual: el.type === "Image" || el.type === "Table",
-        mode: tags.mode,
-        institution: tags.institution,
-        courseName: tags.courseName,
       },
     }));
   } catch (error) {

@@ -12,7 +12,6 @@ import {
   isDocumentElement,
 } from "./helpers.ts";
 import type {
-  Tags,
   DocumentElement,
   mem0RequestSearch,
   mem0RequestAdd,
@@ -165,10 +164,7 @@ export async function generateEmbedding(
   }
 }
 
-export const processMetadata = async (
-  elements: DocumentElement[],
-  tags: Tags,
-) => {
+export const processMetadata = async (elements: DocumentElement[]) => {
   try {
     await ensureCollectionExists(env.COLLECTION_NAME);
 
@@ -188,7 +184,7 @@ export const processMetadata = async (
         );
       }
 
-      const batchRecords = prepareBatchRecords(currBatch, vectors, tags, i);
+      const batchRecords = prepareBatchRecords(currBatch, vectors, i);
 
       await dumpToDb(env.COLLECTION_NAME, batchRecords);
       if (i + BATCHSIZE < elements.length) {

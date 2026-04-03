@@ -161,11 +161,7 @@ async function cmdIngest(args: string): Promise<void> {
   printIngestStart(fileName, inst, course);
   try {
     const buf = Buffer.from(await fs.readFile(absPath));
-    const res = await ingestDocument(buf, absPath, {
-      mode: 0,
-      institution: inst,
-      courseName: course || undefined,
-    } as any);
+    const res = await ingestDocument(buf, absPath);
     logIngest(
       sess.id,
       fileName,

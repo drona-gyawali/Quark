@@ -34,12 +34,6 @@ import {
 import { getLocalImages } from "./vision-bridge.ts";
 import { logger } from "../conf/logger.ts";
 
-const makeTags = (): any => ({
-  mode: "study",
-  institution: "MIT",
-  courseName: "6.006",
-});
-
 const makeBuffer = () => Buffer.from("fake pdf content");
 
 /** Raw partition response — just needs to be something truthy */
@@ -87,19 +81,19 @@ describe("ingestDocument", () => {
 
   it("returns success:true on happy path", async () => {
     setupHappyPath();
-    const result = await ingestDocument(makeBuffer(), "doc.pdf", makeTags());
+    const result = await ingestDocument(makeBuffer(), "doc.pdf");
     expect(result.success).toBe(true);
   });
 
   it("returns correct totalChunks equal to enriched elements length", async () => {
     setupHappyPath(2); // 1 text + 2 visuals = 3 total
-    const result = await ingestDocument(makeBuffer(), "doc.pdf", makeTags());
+    const result = await ingestDocument(makeBuffer(), "doc.pdf");
     expect(result.totalChunks).toBe(3);
   });
 
   it("returns correct visualChunks count", async () => {
     setupHappyPath(3); // 3 elements have visual_description
-    const result = await ingestDocument(makeBuffer(), "doc.pdf", makeTags());
+    const result = await ingestDocument(makeBuffer(), "doc.pdf");
     expect(result.visualChunks).toBe(3);
   });
 
@@ -112,14 +106,14 @@ describe("ingestDocument", () => {
     ] as any);
     vi.mocked(processMetadata).mockResolvedValue(undefined as any);
 
-    const result = await ingestDocument(makeBuffer(), "doc.pdf", makeTags());
+    const result = await ingestDocument(makeBuffer(), "doc.pdf");
     expect(result.visualChunks).toBe(0);
     expect(result.success).toBe(true);
   });
 
   it("totalChunks and visualChunks are consistent with each other", async () => {
     setupHappyPath(2);
-    const result = await ingestDocument(makeBuffer(), "doc.pdf", makeTags());
+    const result = await ingestDocument(makeBuffer(), "doc.pdf");
     expect(result.visualChunks).toBeLessThanOrEqual(result.totalChunks);
   });
 
@@ -140,7 +134,7 @@ describe("ingestDocument", () => {
     );
     vi.mocked(processMetadata).mockResolvedValue(undefined as any);
 
-    await ingestDocument(makeBuffer(), "doc.pdf", makeTags());
+    await ingestDocument(makeBuffer(), "doc.pdf");
 
     // Both must have been called (order is non-deterministic in Promise.all)
     expect(order).toContain("partition");
@@ -150,7 +144,7 @@ describe("ingestDocument", () => {
 
   it("calls visionMaker with raw partition output, localImages, and fileName", async () => {
     setupHappyPath();
-    await ingestDocument(makeBuffer(), "my-file.pdf", makeTags());
+    await ingestDocument(makeBuffer(), "my-file.pdf");
 
     expect(visionMaker).toHaveBeenCalledWith(
       RAW_PARTITION,
@@ -161,30 +155,22 @@ describe("ingestDocument", () => {
 
   it("calls describeVisualElements with visionMaker output", async () => {
     setupHappyPath();
-    await ingestDocument(makeBuffer(), "doc.pdf", makeTags());
+    await ingestDocument(makeBuffer(), "doc.pdf");
 
     expect(describeVisualElements).toHaveBeenCalledWith(VISION_ELEMENTS);
-  });
-
-  it("calls processMetadata with enriched elements and tags", async () => {
-    setupHappyPath(1);
-    const tags = makeTags();
-    await ingestDocument(makeBuffer(), "doc.pdf", tags);
-
-    expect(processMetadata).toHaveBeenCalledWith(makeEnrichedElements(1), tags);
   });
 
   it("calls partitionDocument with the correct fileBuffer and fileName", async () => {
     setupHappyPath();
     const buf = makeBuffer();
-    await ingestDocument(buf, "report.pdf", makeTags());
+    await ingestDocument(buf, "report.pdf");
 
     expect(partitionDocument).toHaveBeenCalledWith(buf, "report.pdf");
   });
 
   it("calls getLocalImages with the fileName", async () => {
     setupHappyPath();
-    await ingestDocument(makeBuffer(), "slides.pdf", makeTags());
+    await ingestDocument(makeBuffer(), "slides.pdf");
 
     expect(getLocalImages).toHaveBeenCalledWith("slides.pdf");
   });
@@ -204,7 +190,7 @@ describe("ingestDocument", () => {
       return { success: true };
     });
 
-    await ingestDocument(makeBuffer(), "doc.pdf", makeTags());
+    await ingestDocument(makeBuffer(), "doc.pdf");
     expect(callOrder).toEqual(["describe", "processMetadata"]);
   });
 
@@ -214,18 +200,18 @@ describe("ingestDocument", () => {
     );
     vi.mocked(getLocalImages).mockResolvedValue({});
 
-    await expect(
-      ingestDocument(makeBuffer(), "doc.pdf", makeTags()),
-    ).rejects.toThrow("Document ingestion failed");
+    await expect(ingestDocument(makeBuffer(), "doc.pdf")).rejects.toThrow(
+      "Document ingestion failed",
+    );
   });
 
   it("throws PipelineException when getLocalImages fails", async () => {
     vi.mocked(partitionDocument).mockResolvedValue(RAW_PARTITION as any);
     vi.mocked(getLocalImages).mockRejectedValue(new Error("python crash"));
 
-    await expect(
-      ingestDocument(makeBuffer(), "doc.pdf", makeTags()),
-    ).rejects.toThrow("Document ingestion failed");
+    await expect(ingestDocument(makeBuffer(), "doc.pdf")).rejects.toThrow(
+      "Document ingestion failed",
+    );
   });
 
   it("throws PipelineException when visionMaker throws", async () => {
@@ -235,9 +221,9 @@ describe("ingestDocument", () => {
       throw new Error("vision maker crash");
     });
 
-    await expect(
-      ingestDocument(makeBuffer(), "doc.pdf", makeTags()),
-    ).rejects.toThrow("Document ingestion failed");
+    await expect(ingestDocument(makeBuffer(), "doc.pdf")).rejects.toThrow(
+      "Document ingestion failed",
+    );
   });
 
   it("throws PipelineException when describeVisualElements fails", async () => {
@@ -248,27 +234,25 @@ describe("ingestDocument", () => {
       new Error("enrich failed"),
     );
 
-    await expect(
-      ingestDocument(makeBuffer(), "doc.pdf", makeTags()),
-    ).rejects.toThrow("Document ingestion failed");
+    await expect(ingestDocument(makeBuffer(), "doc.pdf")).rejects.toThrow(
+      "Document ingestion failed",
+    );
   });
 
   it("throws PipelineException when processMetadata fails", async () => {
     setupHappyPath();
     vi.mocked(processMetadata).mockRejectedValue(new Error("db error"));
 
-    await expect(
-      ingestDocument(makeBuffer(), "doc.pdf", makeTags()),
-    ).rejects.toThrow("Document ingestion failed");
+    await expect(ingestDocument(makeBuffer(), "doc.pdf")).rejects.toThrow(
+      "Document ingestion failed",
+    );
   });
 
   it("thrown error is a PipelineException (not raw Error)", async () => {
     vi.mocked(partitionDocument).mockRejectedValue(new Error("boom"));
     vi.mocked(getLocalImages).mockResolvedValue({});
 
-    const err = await ingestDocument(makeBuffer(), "doc.pdf", makeTags()).catch(
-      (e) => e,
-    );
+    const err = await ingestDocument(makeBuffer(), "doc.pdf").catch((e) => e);
     expect(err.name).toBe("PipelineException");
   });
 
@@ -278,15 +262,13 @@ describe("ingestDocument", () => {
     );
     vi.mocked(getLocalImages).mockResolvedValue({});
 
-    const err = await ingestDocument(makeBuffer(), "doc.pdf", makeTags()).catch(
-      (e) => e,
-    );
+    const err = await ingestDocument(makeBuffer(), "doc.pdf").catch((e) => e);
     expect(err.message).toContain("very specific failure");
   });
 
   it("logs ingestion start", async () => {
     setupHappyPath();
-    await ingestDocument(makeBuffer(), "doc.pdf", makeTags());
+    await ingestDocument(makeBuffer(), "doc.pdf");
     expect(logger.debug).toHaveBeenCalledWith(
       expect.stringContaining("[INGESTION] Starting"),
     );
@@ -294,7 +276,7 @@ describe("ingestDocument", () => {
 
   it("logs completion on success", async () => {
     setupHappyPath();
-    await ingestDocument(makeBuffer(), "doc.pdf", makeTags());
+    await ingestDocument(makeBuffer(), "doc.pdf");
     expect(logger.debug).toHaveBeenCalledWith(
       expect.stringContaining("[INGESTION] Completed"),
     );
@@ -302,7 +284,7 @@ describe("ingestDocument", () => {
 
   it("logs visual element count after enrichment", async () => {
     setupHappyPath(2);
-    await ingestDocument(makeBuffer(), "doc.pdf", makeTags());
+    await ingestDocument(makeBuffer(), "doc.pdf");
     expect(logger.debug).toHaveBeenCalledWith(
       expect.stringContaining("2 visual elements"),
     );
@@ -312,7 +294,7 @@ describe("ingestDocument", () => {
     vi.mocked(partitionDocument).mockRejectedValue(new Error("fail"));
     vi.mocked(getLocalImages).mockResolvedValue({});
 
-    await ingestDocument(makeBuffer(), "doc.pdf", makeTags()).catch(() => {});
+    await ingestDocument(makeBuffer(), "doc.pdf").catch(() => {});
     expect(logger.error).toHaveBeenCalled();
   });
 
@@ -320,7 +302,7 @@ describe("ingestDocument", () => {
     vi.mocked(partitionDocument).mockRejectedValue(new Error("fail"));
     vi.mocked(getLocalImages).mockResolvedValue({});
 
-    await ingestDocument(makeBuffer(), "doc.pdf", makeTags()).catch(() => {});
+    await ingestDocument(makeBuffer(), "doc.pdf").catch(() => {});
 
     const infoCalls: string[] = vi
       .mocked(logger.debug)
