@@ -6,18 +6,18 @@ import { SuperBaseException } from "../conf/exec.ts";
 export interface IngestLog {
   session_id: string;
   filename: string;
-  chunks: number;
-  visual_chunks: number;
+  chunks?: number;
+  visual_chunks?: number;
   status: string | null;
   err_msg?: string;
   metadata?: Json | null;
 }
 
 export interface UpdateLog {
-  filename: string;
-  chunks: number;
-  visual_chunks: number;
-  status: string | null;
+  filename?: string;
+  chunks?: number;
+  visual_chunks?: number;
+  status?: string | null;
   err_msg?: string;
   metadata?: Json | null;
 }
@@ -75,7 +75,6 @@ export const updateIngestLog = async (logs: UpdateLog, ingestId: string) => {
         `Error occured while updating ingest file for for ${ingestId} : ${error.message}`,
       );
     }
-
     return data;
   } catch (error) {
     logger.error(
@@ -83,6 +82,29 @@ export const updateIngestLog = async (logs: UpdateLog, ingestId: string) => {
     );
     throw new SuperBaseException(
       `Error occured while ingesting file for for ${logs.filename} : ${error}`,
+    );
+  }
+};
+
+export const getIngestionLog = async (ingestId: string) => {
+  try {
+    const { data, error } = await db
+      .from("ingest_log")
+      .select("*")
+      .eq("id", ingestId);
+
+    if (error) {
+      logger.error(
+        `Error occured while fetching ingestion  for ${ingestId} :  ${error}`,
+      );
+    }
+    return data;
+  } catch (error) {
+    logger.error(
+      `Error occured while fetching ingestion  for ${ingestId} :  ${error}`,
+    );
+    throw new SuperBaseException(
+      `Error occured while fetching ingestion  for ${ingestId} :  ${error}`,
     );
   }
 };

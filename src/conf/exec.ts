@@ -21,3 +21,11 @@ export class APIException extends Error {
     Object.setPrototypeOf(this, APIException.prototype);
   }
 }
+
+export class WorkerException extends Error {
+  constructor(msg: string) {
+    super(msg);
+    this.name = "WorkerException";
+    Object.setPrototypeOf(this, WorkerException.prototype);
+  }
+}

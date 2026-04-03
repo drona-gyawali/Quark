@@ -288,7 +288,6 @@ describe("llmResponse", () => {
 });
 
 describe("prepareBatchRecords", () => {
-  const tags = { mode: "study", institution: "MIT", courseName: "6.006" };
   const elements = [
     { text: "hello", type: "Text", metadata: { page: 1 } },
     { text: "diagram", type: "Image", metadata: { page: 2 } },
@@ -299,18 +298,18 @@ describe("prepareBatchRecords", () => {
   ];
 
   it("returns one record per element", () => {
-    const records = prepareBatchRecords(elements, vectors, tags, 0);
+    const records = prepareBatchRecords(elements, vectors, 0);
     expect(records).toHaveLength(2);
   });
 
   it("attaches correct vector to each record", () => {
-    const records = prepareBatchRecords(elements, vectors, tags, 0);
+    const records = prepareBatchRecords(elements, vectors, 0);
     expect(records[0].vector).toEqual([0.1, 0.2]);
     expect(records[1].vector).toEqual([0.3, 0.4]);
   });
 
   it("sets chunkIndex correctly based on startIndex", () => {
-    const records = prepareBatchRecords(elements, vectors, tags, 5);
+    const records = prepareBatchRecords(elements, vectors, 5);
     expect(records[0].metadata.chunkIndex).toBe(5);
     expect(records[1].metadata.chunkIndex).toBe(6);
   });
@@ -322,21 +321,14 @@ describe("prepareBatchRecords", () => {
       { text: "t", type: "Text", metadata: {} },
     ];
     const vecs = [[0], [0], [0]];
-    const records = prepareBatchRecords(mixed, vecs, tags, 0);
+    const records = prepareBatchRecords(mixed, vecs, 0);
     expect(records[0].metadata.isVisual).toBe(true);
     expect(records[1].metadata.isVisual).toBe(true);
     expect(records[2].metadata.isVisual).toBe(false);
   });
 
-  it("spreads tags into metadata", () => {
-    const records = prepareBatchRecords(elements, vectors, tags, 0);
-    expect(records[0].metadata.mode).toBe("study");
-    expect(records[0].metadata.institution).toBe("MIT");
-    expect(records[0].metadata.courseName).toBe("6.006");
-  });
-
   it("assigns a unique UUID id to each record", () => {
-    const records = prepareBatchRecords(elements, vectors, tags, 0);
+    const records = prepareBatchRecords(elements, vectors, 0);
     expect(records[0].id).toMatch(
       /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/,
     );
@@ -344,7 +336,7 @@ describe("prepareBatchRecords", () => {
   });
 
   it("throws PipelineException on error", () => {
-    expect(() => prepareBatchRecords(null as any, vectors, tags, 0)).toThrow(
+    expect(() => prepareBatchRecords(null as any, vectors, 0)).toThrow(
       "Error preparing batch records",
     );
   });
