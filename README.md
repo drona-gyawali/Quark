@@ -10,7 +10,7 @@ A high-performance RAG (Retrieval-Augmented Generation) system designed for deep
 
 ---
 
-<img width="804" height="408" alt="image" src="https://github.com/user-attachments/assets/a9446ecb-dad4-43aa-a2d7-8f2260b7a738" />
+<img width="1024" height="1024" alt="image" src="https://github.com/user-attachments/assets/d3b63447-936a-4cc1-9333-2b8aadf5a741" />
 
 ## Architecture Overview
 
