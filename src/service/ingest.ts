@@ -90,11 +90,14 @@ export const getIngestionLog = async (ingestId: string) => {
   try {
     const { data, error } = await db
       .from("ingest_log")
-      .select("*")
+      .select("")
       .eq("id", ingestId);
 
     if (error) {
       logger.error(
+        `Error occured while fetching ingestion  for ${ingestId} :  ${error}`,
+      );
+      throw new SuperBaseException(
         `Error occured while fetching ingestion  for ${ingestId} :  ${error}`,
       );
     }

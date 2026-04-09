@@ -2,25 +2,29 @@ import { Worker } from "bullmq";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import {
-  redisConnection,
+  redisWorkerConnection,
   INGESTION_QUEUE_NAME,
 } from "../shared/queue-config.ts";
 import { logger } from "../conf/logger.ts";
 import { updateIngestLog } from "../service/ingest.ts";
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const processorPath = path.join(
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+const ext = __filename.endsWith(".ts") ? ".ts" : ".js";
+
+export const processorPath = path.join(
   __dirname,
   "processors",
-  "ingestion-processor.ts",
+  `ingestion-processor${ext}`,
 );
 
 const worker = new Worker(INGESTION_QUEUE_NAME, processorPath, {
-  connection: redisConnection,
+  connection: redisWorkerConnection,
   useWorkerThreads: true,
   concurrency: 5,
-  workerForkOptions: {
-    execArgv: ["--experimental-specifier-resolution=node"],
+  workerThreadsOptions: {
+    execArgv: ext === ".ts" ? ["--import", "tsx"] : [],
   },
 });
 
