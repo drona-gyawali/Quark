@@ -31,7 +31,6 @@ export const ingestion_helper = async (
     }
     const logDb = await updateIngestLog(
       {
-        status: "processing",
         chunks: _docIngest.totalChunks,
         visual_chunks: _docIngest.visualChunks,
         metadata: metadata,
