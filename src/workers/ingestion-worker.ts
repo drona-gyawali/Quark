@@ -52,7 +52,10 @@ worker.on("failed", (job, err) => {
   }
 });
 
-process.on("SIGTERM", async () => {
+process.on("SIGTERM", () => {
   logger.info("Shutting down worker...");
-  await worker.close();
+  void worker.close().catch((err) => {
+    logger.error(`Failed to close worker cleanly: ${err}`);
+    process.exitCode = 1;
+  });
 });
