@@ -11,7 +11,7 @@ export const UploadView = new Elysia({prefix: "/ingest"},)
             set.status = 401
             return {error: "Unauthorized Access"}
         }
-        const _res = await createPresignedUrl(body)
+        const _res = await createPresignedUrl(body, user.id)
         if("SizeError" in _res ||"TypeError" in _res) {
             set.status = 400
             return { error: _res.SizeError ?? _res.TypeError }

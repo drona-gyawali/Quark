@@ -15,12 +15,20 @@ export const SessionView = new Elysia({ prefix: "/session" })
         set.status = 200;
         return res;
     })
-    .delete("/:sessionId", async ({ params: { sessionId }, set }) => {
+    .delete("/:sessionId", async ({ params: { sessionId }, user, set }) => {
+        if(!user) {
+            set.status = 401
+            return {error: "Unauthorized Access"}
+        }
         await deleteSession(sessionId);
         set.status = 204;
         return; 
     })
-    .patch("/:sessionId", async ({params: {sessionId}, body, set}) => {
+    .patch("/:sessionId", async ({params: {sessionId},user, body, set}) => {
+        if(!user) {
+            set.status = 401
+            return {error: "Unauthorized Access"}
+        }
         const res = await updateSession(sessionId, body.label)
         set.status = 200
         return {data: res}

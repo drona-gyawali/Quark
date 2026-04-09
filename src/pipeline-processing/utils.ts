@@ -196,7 +196,7 @@ export const processMetadata = async (elements: DocumentElement[]) => {
     return { success: true };
   } catch (error) {
     throw new PipelineException(
-      `Error while processing metadata & saving to DB: ${String(error)}`,
+      `Error while processing metadata & saving to DB: ${String(error)}: targeting ${env.COLLECTION_NAME}`,
     );
   }
 };

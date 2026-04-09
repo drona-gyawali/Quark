@@ -24,7 +24,6 @@ export const ingestDocument = async (
     const finalElements = visionMaker(raw, localImages, fileName);
 
     const enriched = await describeVisualElements(finalElements);
-    logger.debug(enriched);
     const visualCount = enriched.filter(
       (el) => el.metadata?.visual_description,
     ).length;

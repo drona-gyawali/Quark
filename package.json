@@ -9,6 +9,7 @@
     "build": "tsc src/index.ts --outDir dist",
     "start": "NODE_ENV=production node dist/index.js",
     "cli": "npx tsx -r ./src/cli/preload.cjs src/cli/index.ts",
+    "worker": "tsx src/workers/ingestion-worker.ts",
     "esbuild": "esbuild src/index.ts --bundle --platform=node --outfile=dist/index.js",
     "lint": "eslint src/**/*.ts",
     "lint:fix": "eslint src/**/*.ts --fix",
@@ -17,7 +18,7 @@
     "test": "vitest",
     "test:run": "vitest run",
     "test:coverage": "vitest run --coverage",
-    "postinstall": "find node_modules/voyageai/dist/esm -name '*.mjs' | while read f; do dir=$(dirname \"$f\"); base=$(basename \"$f\" .mjs); ln -sf \"$base.mjs\" \"$dir/$base.js\" 2>/dev/null; ln -sf \"$base.mjs\" \"$dir/$base.jsx\" 2>/dev/null; done"
+    "postinstall": "find node_modules/voyageai/dist/esm -name '*.mjs' | while read f; do sed -Ei -e 's#from \"(\\.[^\"]*/[^\".]+)\"#from \"\\1.mjs\"#g' -e \"s#from '(\\.[^']*/[^'.]+)'#from '\\1.mjs'#g\" \"$f\"; sed -Ei -e 's#\\.\\./api\\.mjs#../api/index.mjs#g' -e 's#\\.\\./errors\\.mjs#../errors/index.mjs#g' -e 's#\\.\\./local\\.mjs#../local/index.mjs#g' \"$f\"; done"
   },
   "keywords": [
     "AI",
@@ -32,6 +33,7 @@
     "@eslint/js": "^10.0.1",
     "@types/better-sqlite3": "^7.6.13",
     "@types/dotenv": "^6.1.1",
+    "@types/ioredis": "^4.28.10",
     "@types/istanbul-lib-coverage": "^2.0.6",
     "@types/istanbul-lib-report": "^3.0.3",
     "@types/istanbul-reports": "^3.0.4",
@@ -62,8 +64,10 @@
     "@qdrant/js-client-rest": "^1.13.0",
     "@supabase/supabase-js": "^2.99.3",
     "better-sqlite3": "^12.8.0",
+    "bullmq": "^5.73.0",
     "dotenv": "^17.3.1",
     "elysia": "^1.4.27",
+    "ioredis": "^5.10.1",
     "marked": "^17.0.3",
     "mem0ai": "^1.0.39",
     "openai": "^6.25.0",

@@ -11,7 +11,7 @@ import { StorageException } from "../conf/exec.ts";
 import { logger } from "../conf/logger.ts";
 import type { Key } from "../lib/lib.ts";
 
-export const createPresignedUrl = async (genKey: Key) => {
+export const createPresignedUrl = async (genKey: Key, userId: string) => {
   try {
     if (genKey.contentSize > ALLOWED_SIZE) {
       logger.error("Maximum file size limit exceed");
@@ -25,7 +25,7 @@ export const createPresignedUrl = async (genKey: Key) => {
       };
     }
 
-    const key = generateKey(genKey);
+    const key = generateKey(genKey, userId);
     const command = new PutObjectCommand({
       Bucket: env.OBJECT_NAME,
       Key: key,
@@ -72,7 +72,7 @@ export const getFile = async (key: string) => {
     const byteArray = await response.Body.transformToByteArray();
     const bufferFile = Buffer.from(byteArray);
     const metadata = response.Metadata;
-    logger.info(`fetching file from Oject : ${metadata}`);
+    logger.info(`Fetching File from Object`);
     return { bufferFile, metadata };
   } catch (error) {
     logger.error(`Error occured while downloading file: ${error}`);

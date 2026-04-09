@@ -1,10 +1,10 @@
 import { ingestDocument } from "../pipeline-processing/ingest.ts";
 import { retriveContext } from "../pipeline-processing/retrival.ts";
-import { createIngestLog } from "../service/ingest.ts";
+import { updateIngestLog } from "../service/ingest.ts";
 import { APIException, SuperBaseException } from "../conf/exec.ts";
 import { getFile } from "../service/object.ts";
 import { logger } from "../conf/logger.ts";
-import { type IngestionHelper } from "../lib/lib.js";
+import { type IngestionHelper } from "../lib/lib.ts";
 import type {
   mem0RequestAdd,
   mem0RequestSearch,
@@ -12,8 +12,12 @@ import type {
 } from "../pipeline-processing/pipeline.js";
 import { dumpChatHistory } from "../service/chat.ts";
 import { db } from "../lib/superbase.ts";
+import { randomUUID } from "node:crypto";
 
-export const ingestion_helper = async (ingest: IngestionHelper) => {
+export const ingestion_helper = async (
+  ingest: IngestionHelper,
+  ingest_id: string,
+) => {
   try {
     const { bufferFile, metadata } = await getFile(ingest.key);
     if (!bufferFile) {
@@ -25,18 +29,18 @@ export const ingestion_helper = async (ingest: IngestionHelper) => {
       logger.error(`Error occured in ingestion API ${_docIngest}`);
       throw new APIException(`Error occured in ingestion API ${_docIngest}`);
     }
-    const logDb = await createIngestLog({
-      filename: ingest.filename,
-      status: "processing",
-      chunks: _docIngest.totalChunks,
-      visual_chunks: _docIngest.visualChunks,
-      metadata: metadata,
-      session_id: ingest.session_id,
-    });
-    return logDb.id;
+    const logDb = await updateIngestLog(
+      {
+        chunks: _docIngest.totalChunks,
+        visual_chunks: _docIngest.visualChunks,
+        metadata: metadata,
+      },
+      ingest_id,
+    );
+    return { id: logDb.id };
   } catch (error) {
     logger.error(`Error occured in ingesion API : ${error}`);
-    throw new APIException(`Error occured in ingesion API : ${error}`);
+    return { error: error };
   }
 };
 
@@ -94,4 +98,10 @@ export const me = async (userId: string) => {
     logger.error(`User Profile had a error: ${error}`);
     throw new SuperBaseException(`User Profile had a error: ${error}`);
   }
+};
+
+export const generateJobId = (fileName: string) => {
+  const uid = randomUUID();
+  const _filename = fileName.trim();
+  return `${uid}/${_filename}`;
 };

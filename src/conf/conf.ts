@@ -66,12 +66,15 @@ logger.debug(`Env Variable Injected Successfully`);
 export const env = parsedEnv.data;
 
 // modes of learning
-export enum Mode {
-  EXAM = "EXAM",
-  SELFLEARNING = "SELFLEARNING",
-  DEEPLEARNING = "DEEPLEARNING",
-  CASUALEARNING = "CASUALEARNING",
-}
+export const Mode = {
+  EXAM: "EXAM",
+  SELFLEARNING: "SELFLEARNING",
+  DEEPLEARNING: "DEEPLEARNING",
+  CASUALEARNING: "CASUALEARNING",
+} as const;
+
+// This gives you the same type safety as an enum
+export type ModeType = (typeof Mode)[keyof typeof Mode];
 
 /*
     This is the connection setup for the overall pipeline system.
