@@ -10,6 +10,7 @@ import {
   htmlTableToMarkdown,
   sleep,
   isDocumentElement,
+  nonStreamLLM,
 } from "./helpers.ts";
 import type {
   DocumentElement,
@@ -20,6 +21,8 @@ import { dumpToDb, ensureCollectionExists } from "./vector-db.ts";
 import { EmbedRequestInputType } from "voyageai";
 import type { PartitionResponse } from "unstructured-client/sdk/models/operations";
 import { logger } from "../conf/logger.ts";
+import type { Stream } from "openai/streaming";
+import type { ChatCompletionChunk } from "openai/resources";
 
 // TODO: remove the image , figure and Graphic from the block types
 export const partitionDocument = async (
@@ -63,9 +66,9 @@ export const describeVisualElements = async (
               isBase64(base64Image, ele);
 
               const promptType = ele.type === "Table" ? "Table" : "Image";
-              const description = await llmResponse(
-                base64Image,
+              const description = await nonStreamLLM(
                 getStaticPrompt(promptType),
+                base64Image,
               );
 
               return {
@@ -262,6 +265,7 @@ export const visionMaker = (
     );
     return finalElements;
   } catch (error) {
+    logger.error(`Vision maker has been crashed : ${error}`);
     throw new PipelineException(`Vision maker has been crashed : ${error}`);
   }
 };
@@ -274,8 +278,10 @@ export const reRank = async (query: string, initalResult: string[]) => {
       model: "rerank-2",
       topK: 5,
     });
+    logger.info(`Query has been reranked sucessfully`);
     return rerank;
   } catch (error) {
+    logger.error(`Reranking functionality has been crashed: ${error}`);
     throw new PipelineException(
       `Reranking functionality has been crashed: ${error}`,
     );
@@ -292,8 +298,10 @@ export const mem0Search = async (mem0: mem0RequestSearch) => {
     const mem0Res = _mem0Search.map((msg) =>
       msg.memory ? msg.messages?.map((m) => m.content).join("\n") : msg.memory,
     );
+    logger.info(`memo searching the context in the memory`);
     return mem0Res;
   } catch (error) {
+    logger.error(`Memory Agents failed while searching: ${error}`);
     throw new RetrivalExecption(
       `Memory Agents failed while searching: ${error}`,
     );
@@ -312,8 +320,30 @@ export const mem0Add = async (mem0: mem0RequestAdd) => {
         ...(mem0.sessionId ? { session_id: mem0.sessionId } : {}),
       },
     );
+    logger.info(`Memory context has been saved to [LTM: MME0] `);
     return true;
   } catch (error) {
+    logger.error(`Memory Agents failed while adding: ${error}`);
     throw new RetrivalExecption(`Memory Agents failed while adding: ${error}`);
   }
 };
+
+export async function* streamCollector(
+  res: Promise<Stream<ChatCompletionChunk> & { _request_id?: string | null }>,
+  onFinish: (finalText: string) => Promise<void>,
+) {
+  let fullContent: string = "";
+  try {
+    const _context = await res;
+    logger.info(`Streaming has been started..`);
+    for await (const chunk of _context) {
+      const content = chunk.choices[0].delta?.content || "";
+      fullContent += content;
+      yield chunk;
+    }
+    await onFinish(fullContent);
+  } catch (error) {
+    logger.error(`Stream collector failed : ${error}`);
+    throw new RetrivalExecption(`Stream collector failed : ${error}`);
+  }
+}

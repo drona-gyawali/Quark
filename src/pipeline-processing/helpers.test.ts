@@ -47,6 +47,7 @@ vi.mock("./prompts.json", () => ({
 
 vi.mock("../conf/logger.ts", () => ({
   logger: {
+    info: vi.fn(),
     debug: vi.fn(),
     warn: vi.fn(),
     error: vi.fn(),
@@ -174,6 +175,8 @@ describe("isBase64", () => {
 describe("llmResponse", () => {
   const mockCreate = vi.fn();
 
+  const getContent = (res: any) => res?.choices?.[0]?.message?.content;
+
   beforeEach(() => {
     vi.mocked(llm).mockReturnValue({
       chat: { completions: { create: mockCreate } },
@@ -203,7 +206,8 @@ describe("llmResponse", () => {
     });
 
     const result = await llmResponse(undefined, "What is 2+2?");
-    expect(result).toBe("text answer");
+    expect(getContent(result)).toBe("text answer");
+
     expect(mockCreate).toHaveBeenCalledWith(
       expect.objectContaining({
         messages: [{ role: "user", content: "What is 2+2?" }],
@@ -217,10 +221,11 @@ describe("llmResponse", () => {
     });
 
     const result = await llmResponse(PNG_B64, "Describe this image");
-    expect(result).toBe("image answer");
+    expect(getContent(result)).toBe("image answer");
 
     const call = mockCreate.mock.calls[0][0];
     const content = call.messages[0].content;
+
     expect(content[0]).toEqual({ type: "text", text: "Describe this image" });
     expect(content[1].type).toBe("image_url");
     expect(content[1].image_url.url).toContain("image/png");
@@ -240,9 +245,13 @@ describe("llmResponse", () => {
       mockCreate.mockResolvedValue({
         choices: [{ message: { content: "ok" } }],
       });
-      await llmResponse(b64, "prompt");
+
+      const result = await llmResponse(b64, "prompt");
+      expect(getContent(result)).toBe("ok");
+
       const call = mockCreate.mock.calls.at(-1)![0];
       const url: string = call.messages[0].content[1].image_url.url;
+
       expect(url).toContain(expectedMime);
     }
   });
@@ -252,21 +261,25 @@ describe("llmResponse", () => {
       choices: [{ message: { content: "text only" } }],
     });
 
-    await llmResponse("iVBORshort", "some prompt");
+    const result = await llmResponse("iVBORshort", "some prompt");
+    expect(getContent(result)).toBe("text only");
+
     const call = mockCreate.mock.calls[0][0];
-    // Should be text-only (content is a string, not an array)
     expect(typeof call.messages[0].content).toBe("string");
   });
 
-  it("throws ClientException when LLM returns empty content", async () => {
-    mockCreate.mockResolvedValue({ choices: [{ message: { content: "" } }] });
-    await expect(llmResponse(undefined, "hello")).rejects.toThrow(
-      "LLM returned empty or null content",
-    );
+  it("returns empty content when LLM returns empty content", async () => {
+    mockCreate.mockResolvedValue({
+      choices: [{ message: { content: "" } }],
+    });
+
+    const result = await llmResponse(undefined, "hello");
+    expect(getContent(result)).toBe("");
   });
 
   it("throws ClientException wrapping API errors", async () => {
     mockCreate.mockRejectedValue(new Error("network timeout"));
+
     await expect(llmResponse(undefined, "hello")).rejects.toThrow(
       "LLM request failed: network timeout",
     );
@@ -276,11 +289,13 @@ describe("llmResponse", () => {
     const errWithResponse = Object.assign(new Error("api failed"), {
       response: { status: 429, body: "rate limited" },
     });
+
     mockCreate.mockRejectedValue(errWithResponse);
 
     await llmResponse(undefined, "hello").catch(() => {});
 
     const { logger } = await import("../conf/logger.ts");
+
     expect(logger.error).toHaveBeenCalledWith(
       expect.stringContaining("Raw API response"),
     );

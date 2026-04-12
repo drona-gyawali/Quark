@@ -10,7 +10,12 @@ import {
 } from "./helpers.ts";
 import type { mem0RequestAdd, mem0RequestSearch } from "./pipeline.js";
 import { env } from "../conf/conf.ts";
-import { generateEmbedding, mem0Search, mem0Add } from "./utils.ts";
+import {
+  generateEmbedding,
+  mem0Search,
+  mem0Add,
+  streamCollector,
+} from "./utils.ts";
 import { RetrivalExecption } from "./exec.ts";
 import { SIMILARITY_THRESHOLD, VECTOR_LIMIT } from "./consts.ts";
 import { EmbedRequestInputType } from "voyageai";
@@ -20,20 +25,27 @@ export const retriveContext = async (
   retrival: mem0RequestSearch,
   _mem0Search: mem0RequestSearch,
   _mem0Add: mem0RequestAdd,
+  options?: {
+    onComplete?: (fullText: string) => Promise<void>; // The injected DB logic
+  },
 ) => {
+  logger.info(`[RETERIVAL ENGINE] has been started`);
   try {
     const stmMessage = await getSTM(retrival.sessionId ?? "");
     const contextMemory = await mem0Search(_mem0Search);
+
     const queryVector = (await generateEmbedding(
       retrival.message,
       EmbedRequestInputType.Query,
     )) as number[];
+
     const topCandidates = await getRelevantContext(
       env.COLLECTION_NAME,
       retrival.message,
       queryVector,
       VECTOR_LIMIT,
     );
+
     if (
       topCandidates.length === 0 ||
       (topCandidates[0].score ?? 0) < SIMILARITY_THRESHOLD
@@ -43,41 +55,57 @@ export const retriveContext = async (
         sources: [],
       };
     }
+
     const _contextString = contextString(topCandidates);
     const finalPrompt = Response(
       `${stmContext(stmMessage)}\n${contextMemory}\n${_contextString}`,
       retrival.message,
     );
-    const answer = await llmResponse(undefined, finalPrompt);
 
-    void addSTMMessage(retrival.sessionId ?? "", {
-      role: "user",
-      content: retrival.message,
-    }).catch((err) => logger.error(`Failed to store user STM message: ${err}`));
+    const llmPromise = llmResponse(undefined, finalPrompt);
 
-    void addSTMMessage(retrival.sessionId ?? "", {
-      role: "assistant",
-      content: answer,
-    }).catch((err) =>
-      logger.error("Failed to store assistant STM message:", err),
-    );
+    const stream = streamCollector(llmPromise, async (finalText) => {
+      try {
+        if (options?.onComplete) {
+          await options
+            .onComplete(finalText)
+            .catch((err) =>
+              logger.error(`Engine: onComplete callback failed: ${err}`),
+            );
+        }
 
-    void handleMemoryCompression(
-      retrival.sessionId ?? "",
-      async (summary: string) => {
-        const payload = {
-          ..._mem0Add,
-          messages: [{ role: "system", content: summary }],
-        };
-        await mem0Add(payload).catch((err) =>
-          logger.error("Failed to save LTM summary:", err),
+        await addSTMMessage(retrival.sessionId ?? "", {
+          role: "user",
+          content: retrival.message,
+        });
+
+        await addSTMMessage(retrival.sessionId ?? "", {
+          role: "assistant",
+          content: finalText,
+        });
+
+        await handleMemoryCompression(
+          retrival.sessionId ?? "",
+          async (summary: string) => {
+            const payload = {
+              ..._mem0Add,
+              messages: [{ role: "system", content: summary }],
+            };
+            await mem0Add(payload);
+          },
         );
-      },
-    ).catch((err) => logger.error("Memory compression failed:", err));
+
+        logger.info(
+          `[Quark] Successfully persisted session: ${retrival.sessionId}`,
+        );
+      } catch (err) {
+        logger.error(`[Quark] Post-stream persistence failed: ${err}`);
+      }
+    });
 
     return {
-      answer,
-      sources: [],
+      stream,
+      sources: topCandidates,
     };
   } catch (error) {
     logger.error(`Retrival Error: ${error}`);

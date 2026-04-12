@@ -71,10 +71,7 @@ export const isBase64 = (base64Image: string, ele: any) => {
   return true;
 };
 
-export const llmResponse = async (
-  base64Image?: string,
-  message?: string,
-): Promise<string> => {
+export const llmResponse = async (base64Image?: string, message?: string) => {
   if (!message?.trim()) {
     throw new ClientException("Prompt/message cannot be empty");
   }
@@ -120,25 +117,19 @@ export const llmResponse = async (
   }
 
   try {
-    const response = await llm().chat.completions.create({
+    const response = await llm(
+      env.LLM_TOKEN,
+      env.LLM_URL,
+    ).chat.completions.create({
       model: env.LLM_MODEL,
       messages,
       max_tokens: 400,
       temperature: 0.4,
+      stream: true,
     });
 
-    const content = response.choices?.[0]?.message?.content?.trim();
-
-    if (!content) {
-      throw new ClientException("LLM returned empty or null content");
-    }
-
-    const preview =
-      content.length > 100 ? content.slice(0, 100) + "..." : content;
-
-    logger.debug(`[llm] Success → preview: ${preview}`);
-
-    return content;
+    logger.info(`LLM started to streaming the response`);
+    return response;
   } catch (err: any) {
     const errorMessage = err.message || String(err);
 
@@ -148,7 +139,65 @@ export const llmResponse = async (
       logger.error(`[llm] Raw API response: ${err.response}`);
     }
 
+    logger.error(`LLM request failed: ${errorMessage}`);
     throw new ClientException(`LLM request failed: ${errorMessage}`);
+  }
+};
+
+export const nonStreamLLM = async (
+  conversation: string,
+  base64Image?: string,
+) => {
+  try {
+    logger.info(`Starting the nonStreamLLM`);
+    const hasImage =
+      typeof base64Image === "string" && base64Image.length > 200;
+    // Prepare the content structure
+    let contentPayload: any;
+
+    if (hasImage) {
+      logger.info(`Starting to read the image data`);
+      const mimeType = mimeType_(base64Image);
+      contentPayload = [
+        { type: "text", text: conversation },
+        {
+          type: "image_url",
+          image_url: {
+            url: `data:${mimeType};base64,${base64Image}`,
+          },
+        },
+      ];
+    } else {
+      contentPayload = conversation;
+    }
+
+    const res = await llm(
+      env.SUMMARIZER_AI_TOKEN,
+      env.SUMMARIZER_AI_URL,
+    ).chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [{ role: "user", content: contentPayload }],
+      stream: false,
+      temperature: 0.1,
+    });
+
+    const content = res.choices?.[0]?.message?.content?.trim();
+
+    if (!content) {
+      logger.error("Summarizer AI unable to respond with the conversations");
+      throw new ClientException(
+        `Summarizer AI unable to respond with the conversations`,
+      );
+    }
+
+    return content;
+  } catch (error) {
+    logger.error(
+      `Summarizer AI unable to respond with the conversations: ${error}`,
+    );
+    throw new ClientException(
+      `Summarizer AI unable to respond with the conversations: ${error}`,
+    );
   }
 };
 
@@ -169,6 +218,7 @@ export const prepareBatchRecords = (
       },
     }));
   } catch (error) {
+    logger.error(`Error preparing batch records: ${error}`);
     throw new PipelineException(`Error preparing batch records: ${error}`);
   }
 };
@@ -225,11 +275,7 @@ export const addSTMMessage = async (
       timestamp: Date.now(),
     }),
   );
-
-  // keep last N messages
   await redis.lTrim(key, -MAX_MESSAGES, -1);
-
-  // expire session
   await redis.expire(key, TTL_SECONDS);
 };
 
@@ -239,7 +285,7 @@ export const getSTM = async (sessionId: string): Promise<ChatMessage[]> => {
   const raw = await redis.lRange(key, 0, -1);
 
   const _raw = raw.map((m) => JSON.parse(m));
-
+  logger.info(`Getting the STM context from cache for: ${sessionId}`);
   return _raw;
 };
 
@@ -251,7 +297,7 @@ export const stmContext = (
 
 export const trimSTM = async (sessionId: string) => {
   const key = `${STM_PREFIX}${sessionId}`;
-
+  logger.info(`Trimming the stm context for ${sessionId}`);
   await redis.lTrim(key, -TRIM_TO, -1);
 };
 
@@ -261,12 +307,15 @@ export const handleMemoryCompression = async (
 ) => {
   const messages = await getSTM(sessionId);
   if (messages.length < 20) {
+    logger.info(`Skipping the memory compression:  ${sessionId}`);
     return;
   }
 
-  const message = stmContext(messages);
+  logger.info(`Starting the memory compression for: ${sessionId}`);
+  const messagesToSummarize = messages.slice(0, 15);
+  const message = stmContext(messagesToSummarize);
   const prompt = summarizeResponse(message);
-  const summary = await llmResponse(undefined, prompt);
+  const summary = await nonStreamLLM(prompt);
   await saveLongTermMemory(summary);
   await trimSTM(sessionId);
 };
