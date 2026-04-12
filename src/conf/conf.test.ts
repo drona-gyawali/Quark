@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, afterEach } from "vitest";
 import { z } from "zod";
 
 vi.mock("dotenv", () => ({ default: { config: vi.fn() } }));
@@ -202,27 +202,6 @@ describe("envSchema — invalid inputs", () => {
     expect(result.success).toBe(false);
     if (!result.success) expect(result.error.issues.length).toBeGreaterThan(0);
   });
-});
-
-// ─── Mode enum ───────────────────────────────────────────────────────────────
-
-describe("Mode enum", () => {
-  // Tested as plain values — importing conf.ts directly is unsafe due to
-  // top-level side effects (process.exit, await connectRedis)
-  const Mode = {
-    EXAM: "EXAM",
-    SELFLEARNING: "SELFLEARNING",
-    DEEPLEARNING: "DEEPLEARNING",
-    CASUALEARNING: "CASUALEARNING",
-  };
-
-  it("EXAM equals 'EXAM'", () => expect(Mode.EXAM).toBe("EXAM"));
-  it("SELFLEARNING equals 'SELFLEARNING'", () =>
-    expect(Mode.SELFLEARNING).toBe("SELFLEARNING"));
-  it("DEEPLEARNING equals 'DEEPLEARNING'", () =>
-    expect(Mode.DEEPLEARNING).toBe("DEEPLEARNING"));
-  it("CASUALEARNING equals 'CASUALEARNING'", () =>
-    expect(Mode.CASUALEARNING).toBe("CASUALEARNING"));
 });
 
 // ─── Factory constructors — tested in isolation ───────────────────────────────

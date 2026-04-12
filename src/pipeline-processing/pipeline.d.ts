@@ -1,5 +1,3 @@
-import type { Mode } from "./retrival.ts";
-
 export interface DocumentElement {
   element_id: string;
   type: string;

@@ -11,7 +11,7 @@ import { S3 } from "@aws-sdk/client-s3";
 import { logger } from "../conf/logger.ts";
 import { OBJECT_ENDPOINT, OBJECT_REGION } from "./const.ts";
 
-dotenv.config();
+dotenv.config({ quiet: true });
 
 /* 
     Centralizing the ENV variable for overall pipline system.
@@ -64,17 +64,6 @@ if (!parsedEnv.success) {
 logger.debug(`Env Variable Injected Successfully`);
 
 export const env = parsedEnv.data;
-
-// modes of learning
-export const Mode = {
-  EXAM: "EXAM",
-  SELFLEARNING: "SELFLEARNING",
-  DEEPLEARNING: "DEEPLEARNING",
-  CASUALEARNING: "CASUALEARNING",
-} as const;
-
-// This gives you the same type safety as an enum
-export type ModeType = (typeof Mode)[keyof typeof Mode];
 
 /*
     This is the connection setup for the overall pipeline system.
