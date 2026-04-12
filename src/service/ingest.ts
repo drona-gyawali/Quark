@@ -90,7 +90,7 @@ export const getIngestionLog = async (ingestId: string) => {
   try {
     const { data, error } = await db
       .from("ingest_log")
-      .select("")
+      .select("*")
       .eq("id", ingestId);
 
     if (error) {

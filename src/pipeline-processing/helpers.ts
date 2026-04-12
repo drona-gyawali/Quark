@@ -199,13 +199,8 @@ export const resolveTemplate = (
   });
 };
 
-export const Response = (
-  contextString: string,
-  filters: any,
-  message: string,
-) => {
+export const Response = (contextString: string, message: string) => {
   return resolveTemplate(prompts.templates.tutorResponse, {
-    institution: filters.institution,
     contextString: contextString,
     message: message,
   });

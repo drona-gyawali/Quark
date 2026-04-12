@@ -253,7 +253,6 @@ async function cmdQuery(text: string): Promise<void> {
     const res = await retriveContext(
       {
         message: text,
-        filters: { institution, mode: 0 as any },
         userId: username,
         sessionId: sid,
       } as any,

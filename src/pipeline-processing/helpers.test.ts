@@ -397,12 +397,7 @@ describe("resolveTemplate", () => {
 
 describe("Response", () => {
   it("injects institution, contextString, and message into the template", () => {
-    const result = Response(
-      "ctx data",
-      { institution: "Harvard" },
-      "What is ML?",
-    );
-    expect(result).toContain("Harvard");
+    const result = Response("ctx data", "What is ML?");
     expect(result).toContain("ctx data");
     expect(result).toContain("What is ML?");
   });

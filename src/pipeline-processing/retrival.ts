@@ -8,11 +8,7 @@ import {
   handleMemoryCompression,
   stmContext,
 } from "./helpers.ts";
-import type {
-  mem0RequestAdd,
-  mem0RequestSearch,
-  RetrivalRequest,
-} from "./pipeline.js";
+import type { mem0RequestAdd, mem0RequestSearch } from "./pipeline.js";
 import { env } from "../conf/conf.ts";
 import { generateEmbedding, mem0Search, mem0Add } from "./utils.ts";
 import { RetrivalExecption } from "./exec.ts";
@@ -21,7 +17,7 @@ import { EmbedRequestInputType } from "voyageai";
 import { logger } from "../conf/logger.ts";
 
 export const retriveContext = async (
-  retrival: RetrivalRequest,
+  retrival: mem0RequestSearch,
   _mem0Search: mem0RequestSearch,
   _mem0Add: mem0RequestAdd,
 ) => {
@@ -33,7 +29,6 @@ export const retriveContext = async (
       EmbedRequestInputType.Query,
     )) as number[];
     const topCandidates = await getRelevantContext(
-      retrival.filters,
       env.COLLECTION_NAME,
       retrival.message,
       queryVector,
@@ -51,7 +46,6 @@ export const retriveContext = async (
     const _contextString = contextString(topCandidates);
     const finalPrompt = Response(
       `${stmContext(stmMessage)}\n${contextMemory}\n${_contextString}`,
-      retrival.filters,
       retrival.message,
     );
     const answer = await llmResponse(undefined, finalPrompt);

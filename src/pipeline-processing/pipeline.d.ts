@@ -31,10 +31,6 @@ export interface mem0RequestAdd extends mem0RequestSearch {
   response: string;
 }
 
-export interface RetrivalRequest extends mem0RequestSearch {
-  filters: Tags;
-}
-
 export type ChatRole = "user" | "assistant" | "system";
 
 export interface ChatMessage {

@@ -63,7 +63,6 @@ import { logger } from "../conf/logger.ts";
 const makeRetrieval = (overrides = {}): any => ({
   message: "What is gradient descent?",
   sessionId: "sess-123",
-  filters: { institution: "MIT", mode: "study", courseName: "6.006" },
   ...overrides,
 });
 
@@ -230,7 +229,6 @@ describe("retriveContext", () => {
     setupHappyPath();
     await retriveContext(makeRetrieval(), makeMem0Search(), makeMem0Add());
     expect(getRelevantContext).toHaveBeenCalledWith(
-      { institution: "MIT", mode: "study", courseName: "6.006" },
       "test-collection",
       "What is gradient descent?",
       QUERY_VECTOR,
@@ -253,16 +251,6 @@ describe("retriveContext", () => {
     setupHappyPath();
     await retriveContext(makeRetrieval(), makeMem0Search(), makeMem0Add());
     expect(llmResponse).toHaveBeenCalledWith(undefined, "Final prompt for LLM");
-  });
-
-  it("calls Response with filters and message", async () => {
-    setupHappyPath();
-    await retriveContext(makeRetrieval(), makeMem0Search(), makeMem0Add());
-    expect(Response).toHaveBeenCalledWith(
-      expect.any(String),
-      { institution: "MIT", mode: "study", courseName: "6.006" },
-      "What is gradient descent?",
-    );
   });
 
   it("fires addSTMMessage for user message after getting answer", async () => {

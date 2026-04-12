@@ -192,7 +192,6 @@ describe("dumpToDb", () => {
 describe("getRelevantContext", () => {
   let client: ReturnType<typeof makeVectorClient>;
 
-  const filters = { mode: "study", institution: "MIT", courseName: "6.006" };
   const queryVector = Array.from({ length: 1024 }, () => 0.1);
 
   const makeSearchHits = () => [
@@ -234,7 +233,7 @@ describe("getRelevantContext", () => {
     client.search.mockResolvedValue(makeSearchHits());
     vi.mocked(reRank).mockResolvedValue(makeReRankResponse() as any);
 
-    await getRelevantContext(filters, "col", "what is ML?", queryVector, 5);
+    await getRelevantContext("col", "what is ML?", queryVector, 5);
 
     expect(client.search).toHaveBeenCalledWith("col", {
       vector: queryVector,
@@ -247,7 +246,7 @@ describe("getRelevantContext", () => {
     client.search.mockResolvedValue(makeSearchHits());
     vi.mocked(reRank).mockResolvedValue(makeReRankResponse() as any);
 
-    await getRelevantContext(filters, "col", "query", queryVector, 5);
+    await getRelevantContext("col", "query", queryVector, 5);
 
     expect(reRank).toHaveBeenCalledWith("query", ["doc one", "doc two"]);
   });
@@ -256,13 +255,7 @@ describe("getRelevantContext", () => {
     client.search.mockResolvedValue(makeSearchHits());
     vi.mocked(reRank).mockResolvedValue(makeReRankResponse() as any);
 
-    const result = await getRelevantContext(
-      filters,
-      "col",
-      "q",
-      queryVector,
-      5,
-    );
+    const result = await getRelevantContext("col", "q", queryVector, 5);
 
     // rerank order: index 1 first, then index 0
     expect(result[0].text).toBe("doc two");
@@ -273,13 +266,7 @@ describe("getRelevantContext", () => {
     client.search.mockResolvedValue(makeSearchHits());
     vi.mocked(reRank).mockResolvedValue(makeReRankResponse() as any);
 
-    const result = await getRelevantContext(
-      filters,
-      "col",
-      "q",
-      queryVector,
-      5,
-    );
+    const result = await getRelevantContext("col", "q", queryVector, 5);
 
     expect(result[0].score).toBe(0.95);
     expect(result[1].score).toBe(0.75);
@@ -293,13 +280,7 @@ describe("getRelevantContext", () => {
       data: [{ index: 0, relevanceScore: 0.9 }],
     } as any);
 
-    const result = await getRelevantContext(
-      filters,
-      "col",
-      "q",
-      queryVector,
-      1,
-    );
+    const result = await getRelevantContext("col", "q", queryVector, 1);
     expect(result[0].isVisual).toBe(true);
   });
 
@@ -314,13 +295,7 @@ describe("getRelevantContext", () => {
       data: [{ index: 0, relevanceScore: 0.9 }],
     } as any);
 
-    const result = await getRelevantContext(
-      filters,
-      "col",
-      "q",
-      queryVector,
-      1,
-    );
+    const result = await getRelevantContext("col", "q", queryVector, 1);
     expect(result[0].isVisual).toBe(true);
   });
 
@@ -332,13 +307,7 @@ describe("getRelevantContext", () => {
       data: [{ index: 0, relevanceScore: 0.8 }],
     } as any);
 
-    const result = await getRelevantContext(
-      filters,
-      "col",
-      "q",
-      queryVector,
-      1,
-    );
+    const result = await getRelevantContext("col", "q", queryVector, 1);
     expect(result[0].page).toBe(7);
   });
 
@@ -350,13 +319,7 @@ describe("getRelevantContext", () => {
       data: [{ index: 0, relevanceScore: 0.8 }],
     } as any);
 
-    const result = await getRelevantContext(
-      filters,
-      "col",
-      "q",
-      queryVector,
-      1,
-    );
+    const result = await getRelevantContext("col", "q", queryVector, 1);
     expect(result[0].imageUrl).toBeNull();
   });
 
@@ -365,7 +328,7 @@ describe("getRelevantContext", () => {
     vi.mocked(reRank).mockResolvedValue({ data: null } as any);
 
     await expect(
-      getRelevantContext(filters, "col", "q", queryVector, 5),
+      getRelevantContext("col", "q", queryVector, 5),
     ).rejects.toThrow("Error occured while processing reranking startegy");
   });
 
@@ -374,7 +337,7 @@ describe("getRelevantContext", () => {
     vi.mocked(reRank).mockResolvedValue(undefined as any);
 
     await expect(
-      getRelevantContext(filters, "col", "q", queryVector, 5),
+      getRelevantContext("col", "q", queryVector, 5),
     ).rejects.toThrow("Error occured while processing");
   });
 
@@ -382,7 +345,7 @@ describe("getRelevantContext", () => {
     client.search.mockRejectedValue(new Error("search failed"));
 
     await expect(
-      getRelevantContext(filters, "col", "q", queryVector, 5),
+      getRelevantContext("col", "q", queryVector, 5),
     ).rejects.toThrow("Error occured while processing the response from db");
   });
 
@@ -391,19 +354,15 @@ describe("getRelevantContext", () => {
     vi.mocked(reRank).mockRejectedValue(new Error("rerank crash"));
 
     await expect(
-      getRelevantContext(filters, "col", "q", queryVector, 5),
+      getRelevantContext("col", "q", queryVector, 5),
     ).rejects.toThrow("Error occured while processing the response from db");
   });
 
   it("throws DatabaseExecption (not raw error) on any failure", async () => {
     client.search.mockRejectedValue(new Error("boom"));
-    const err = await getRelevantContext(
-      filters,
-      "col",
-      "q",
-      queryVector,
-      5,
-    ).catch((e) => e);
+    const err = await getRelevantContext("col", "q", queryVector, 5).catch(
+      (e) => e,
+    );
     expect(err.name).toBe("DatabaseExecption");
   });
 
@@ -423,13 +382,7 @@ describe("getRelevantContext", () => {
       data: [{ index: 0, relevanceScore: 0.99 }],
     } as any);
 
-    const result = await getRelevantContext(
-      filters,
-      "col",
-      "q",
-      queryVector,
-      1,
-    );
+    const result = await getRelevantContext("col", "q", queryVector, 1);
     expect(result[0]).toMatchObject({
       text: "important content",
       page: 3,

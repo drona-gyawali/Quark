@@ -1,7 +1,6 @@
 import type { RerankResponseDataItem } from "voyageai";
 import { vector } from "../conf/conf.ts";
 import { DatabaseExecption } from "./exec.ts";
-import type { Tags } from "./pipeline.js";
 import { reRank } from "./utils.ts";
 import { logger } from "../conf/logger.ts";
 
@@ -53,13 +52,11 @@ export const dumpToDb = async (collectionName: string, batchRecords: any[]) => {
 };
 
 export const getRelevantContext = async (
-  filters: Tags,
   collectionName: string,
   query: string,
   queryVector: number[],
   limit: number,
 ) => {
-  logger.debug(`Filters: ${filters}`);
   logger.debug(`Vector size: ${queryVector.length}`);
   logger.debug(`Collection: ${collectionName}`);
   try {

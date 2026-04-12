@@ -53,8 +53,7 @@ export const RetriveView = new Elysia({ prefix: "/chat", })
             const result = await retriver_helper(
                 { 
                     message: body.message, 
-                    sessionId: body.sessionId,
-                    filters: { institution: body.institution, mode: 0 } 
+                    sessionId: body.sessionId, 
                 } as any,
                 { message: body.message, userId: userId, sessionId: body.sessionId } as any,
                 { message: body.message, userId: userId, sessionId: body.sessionId, query: body.message, response: "" } as any
@@ -76,7 +75,6 @@ export const RetriveView = new Elysia({ prefix: "/chat", })
         body: t.Object({
             message: t.String(),
             sessionId: t.String(),
-            institution: t.Optional(t.String())
         })
     });
     
