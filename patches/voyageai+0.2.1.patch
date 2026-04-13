@@ -1,0 +1,66 @@
+diff --git a/node_modules/voyageai/dist/esm/extended/ExtendedClient.mjs b/node_modules/voyageai/dist/esm/extended/ExtendedClient.mjs
+index ee9f4d8..9d7739b 100644
+--- a/node_modules/voyageai/dist/esm/extended/ExtendedClient.mjs
++++ b/node_modules/voyageai/dist/esm/extended/ExtendedClient.mjs
+@@ -10,11 +10,11 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
+         step((generator = generator.apply(thisArg, _arguments || [])).next());
+     });
+ };
+-import { VoyageAIClient as GeneratedClient } from "../Client";
+-import { HttpResponsePromise } from "../core/fetcher/HttpResponsePromise";
+-import { unknownRawResponse } from "../core/fetcher/RawResponse";
+-import { localEmbed, isLocalModel } from "../local";
+-import { tokenizeTexts } from "../local/tokenizer";
++import { VoyageAIClient as GeneratedClient } from "../Client.mjs";
++import { HttpResponsePromise } from "../core/fetcher/HttpResponsePromise.mjs";
++import { unknownRawResponse } from "../core/fetcher/RawResponse.mjs";
++import { localEmbed, isLocalModel } from "../local/index.mjs";
++import { tokenizeTexts } from "../local/tokenizer.mjs";
+ export class VoyageAIClient extends GeneratedClient {
+     /**
+      * Voyage embedding endpoint receives as input a string (or a list of strings) and other arguments such as the preferred model name, and returns a response containing a list of embeddings.
+diff --git a/node_modules/voyageai/dist/esm/extended/index.mjs b/node_modules/voyageai/dist/esm/extended/index.mjs
+index 2435fff..7493e41 100644
+--- a/node_modules/voyageai/dist/esm/extended/index.mjs
++++ b/node_modules/voyageai/dist/esm/extended/index.mjs
+@@ -1,9 +1,9 @@
+ // Re-export everything from generated SDK
+-export * from "../api";
+-export * from "../errors";
++export * from "../api/index.mjs";
++export * from "../errors/index.mjs";
+ // Export our extended client as the main one
+-export { VoyageAIClient } from "./ExtendedClient";
++export { VoyageAIClient } from "./ExtendedClient.mjs";
+ // For advanced users who want the original generated client
+-export { VoyageAIClient as GeneratedVoyageAIClient } from "../Client";
++export { VoyageAIClient as GeneratedVoyageAIClient } from "../Client.mjs";
+ // Export local utilities for advanced use cases
+-export { localEmbed, isLocalModel } from "../local";
++export { localEmbed, isLocalModel } from "../local/index.mjs";
+diff --git a/node_modules/voyageai/dist/esm/local/index.mjs b/node_modules/voyageai/dist/esm/local/index.mjs
+index 452c976..4d72a01 100644
+--- a/node_modules/voyageai/dist/esm/local/index.mjs
++++ b/node_modules/voyageai/dist/esm/local/index.mjs
+@@ -1,3 +1,3 @@
+-export { localEmbed } from "./local-embedder";
+-export { getTokenizerForModel, tokenizeTexts } from "./tokenizer";
+-export { isLocalModel, getModelConfig, validateDimension, validatePrecision, SUPPORTED_MODELS, } from "./model-registry";
++export { localEmbed } from "./local-embedder.mjs";
++export { getTokenizerForModel, tokenizeTexts } from "./tokenizer.mjs";
++export { isLocalModel, getModelConfig, validateDimension, validatePrecision, SUPPORTED_MODELS, } from "./model-registry.mjs";
+diff --git a/node_modules/voyageai/dist/esm/local/local-embedder.mjs b/node_modules/voyageai/dist/esm/local/local-embedder.mjs
+index 5b5417b..b185b63 100644
+--- a/node_modules/voyageai/dist/esm/local/local-embedder.mjs
++++ b/node_modules/voyageai/dist/esm/local/local-embedder.mjs
+@@ -11,8 +11,8 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
+         step((generator = generator.apply(thisArg, _arguments || [])).next());
+     });
+ };
+-import { getModelConfig, validateDimension, validatePrecision } from "./model-registry";
+-import { getTransformers, getTokenizerForModel } from "./tokenizer";
++import { getModelConfig, validateDimension, validatePrecision } from "./model-registry.mjs";
++import { getTransformers, getTokenizerForModel } from "./tokenizer.mjs";
+ // Cached pipelines (persist across calls)
+ const pipelineCache = new Map();
+ function getPipeline(onnxModelId) {

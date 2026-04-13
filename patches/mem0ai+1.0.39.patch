@@ -1,0 +1,22 @@
+diff --git a/node_modules/mem0ai/dist/index.mjs b/node_modules/mem0ai/dist/index.mjs
+index 8491e23..205b9b3 100644
+--- a/node_modules/mem0ai/dist/index.mjs
++++ b/node_modules/mem0ai/dist/index.mjs
+@@ -8,7 +8,7 @@ var POSTHOG_API_KEY = "phc_hgJkUVJFYtmaJqrvf6CYN67TIQ8yhXAkWzUn9AMU4yX";
+ var POSTHOG_HOST = "https://us.i.posthog.com";
+ async function generateHash(input) {
+   const msgBuffer = new TextEncoder().encode(input);
+-  const hashBuffer = await window.crypto.subtle.digest("SHA-256", msgBuffer);
++  const hashBuffer = await globalThis.crypto.subtle.digest("SHA-256", msgBuffer);
+   const hashArray = Array.from(new Uint8Array(hashBuffer));
+   return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
+ }
+@@ -35,7 +35,7 @@ var BrowserTelemetry = class {
+     const eventProperties = {
+       client_source: "browser",
+       client_version: getVersion(),
+-      browser: window.navigator.userAgent,
++      browser: (typeof window !== "undefined" ? window.navigator.userAgent : "node-js"),
+       ...properties
+     };
+     try {

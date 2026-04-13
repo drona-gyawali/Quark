@@ -237,16 +237,16 @@ async function cmdQuery(text: string): Promise<void> {
   const { retriveContext } = await import("../pipeline-processing/retrival.ts");
   const sess = active();
   const username = user?.username ?? "user";
-  
+
   if (!sess) {
     wl(`  ${G.cross}  No active session.`, C.red);
     return;
   }
-  
+
   const sid = sess.id;
   printUserMsg(username, text, nowTS());
   appendChat(sid, "user", text);
-  
+
   const stopSpinner = startSpinner("Thinking");
 
   let fullAnswer = "";
@@ -256,7 +256,13 @@ async function cmdQuery(text: string): Promise<void> {
     const res = await retriveContext(
       { message: text, userId: username, sessionId: sid } as any,
       { message: text, userId: username, sessionId: sid } as any,
-      { message: text, userId: username, sessionId: sid, query: text, response: "" } as any,
+      {
+        message: text,
+        userId: username,
+        sessionId: sid,
+        query: text,
+        response: "",
+      } as any,
     );
 
     // 1. Handle the Stream Case
@@ -266,18 +272,17 @@ async function cmdQuery(text: string): Promise<void> {
         const content = chunk.choices[0]?.delta?.content || "";
         fullAnswer += content;
       }
-    } 
+    }
     // 2. Handle the Static Answer Case
     else if (res.answer) {
       fullAnswer = res.answer;
     }
-
   } catch (e: any) {
     fullAnswer = e?.message ?? String(e);
     isError = true;
   } finally {
     stopSpinner(); // Ensure it stops if it hasn't already
-    
+
     if (isError) {
       printErrMsg(fullAnswer);
       appendChat(sid, "system", fullAnswer);
