@@ -61,33 +61,24 @@ export const retriveContext = async (
     );
 
     const llmStream = llmResponse(undefined, finalPrompt);
-
-    let finalText = "";
-
-    const stream = streamCollector(llmStream, async (text) => {
-      finalText = text;
+    // TODO: when we scale, we have to think of better use...
+    const stream = streamCollector(llmStream, async (finalText) => {
+      try {
+        await ChatQueue.add("persist-chat", {
+          sessionId,
+          assistantMessage: finalText,
+          mem0Payload: _mem0Add,
+        });
+        logger.info(`[Quark] Job queued for session: ${sessionId}`);
+      } catch (error) {
+        logger.error(`[Quark] Queue push failed: ${error}`);
+      }
     });
 
     addSTMMessage(sessionId, {
       role: "user",
       content: retrival.message,
     }).catch((err) => logger.error(`Failed to save user message: ${err}`));
-
-    (async () => {
-      try {
-        await new Promise((resolve) => setTimeout(resolve, 0));
-
-        await ChatQueue.add("persist-chat", {
-          sessionId,
-          assistantMessage: finalText,
-          mem0Payload: _mem0Add,
-        });
-
-        logger.info(`[Quark] Job queued for session: ${sessionId}`);
-      } catch (err) {
-        logger.error(`[Quark] Queue push failed: ${err}`);
-      }
-    })();
 
     return {
       stream,
