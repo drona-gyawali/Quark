@@ -57,17 +57,7 @@ export const retriver_helper = async (
   }).catch((err) => logger.error(`Background User Log Failed: ${err}`));
 
   try {
-    const res = await retriveContext(retrive, search, add, {
-      onComplete: async (finalText) => {
-        await dumpChatHistory({
-          session_id: String(sessionId),
-          role: "assistant",
-          content: finalText,
-        });
-        logger.debug(`API: Assistant Log Success for ${sessionId}`);
-      },
-    });
-
+    const res = await retriveContext(retrive, search, add);
     return res;
   } catch (error: any) {
     const errorMsg = error?.message ?? String(error);

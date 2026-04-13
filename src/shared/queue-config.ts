@@ -15,8 +15,13 @@ export const redisProducerConnection = new Redis(env.REDIS_URL, {
 });
 
 export const INGESTION_QUEUE_NAME = "doc-ingest";
+export const CHAT_QUEUE_NAME = "chat-queue";
 
 // The Queue instance used by the API routes should use the Producer connection
 export const IngestionQueue = new Queue(INGESTION_QUEUE_NAME, {
+  connection: redisProducerConnection,
+});
+
+export const ChatQueue = new Queue(CHAT_QUEUE_NAME, {
   connection: redisProducerConnection,
 });

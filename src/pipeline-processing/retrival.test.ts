@@ -1,5 +1,7 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
 
+/* -------------------- mocks -------------------- */
+
 vi.mock("./vector-db.ts", () => ({
   getRelevantContext: vi.fn(),
 }));
@@ -10,15 +12,19 @@ vi.mock("./helpers.ts", () => ({
   Response: vi.fn(),
   getSTM: vi.fn(),
   addSTMMessage: vi.fn(),
-  handleMemoryCompression: vi.fn(),
   stmContext: vi.fn(),
 }));
 
 vi.mock("./utils.ts", () => ({
   generateEmbedding: vi.fn(),
   mem0Search: vi.fn(),
-  mem0Add: vi.fn(),
   streamCollector: vi.fn(),
+}));
+
+vi.mock("../shared/queue-config.ts", () => ({
+  ChatQueue: {
+    add: vi.fn(),
+  },
 }));
 
 vi.mock("../conf/conf.ts", () => ({
@@ -47,6 +53,8 @@ vi.mock("voyageai", () => ({
   EmbedRequestInputType: { Query: "query" },
 }));
 
+/* -------------------- imports -------------------- */
+
 import { retriveContext } from "./retrival.ts";
 import { getRelevantContext } from "./vector-db.ts";
 import {
@@ -55,16 +63,22 @@ import {
   Response,
   getSTM,
   addSTMMessage,
-  handleMemoryCompression,
   stmContext,
 } from "./helpers.ts";
-import {
-  generateEmbedding,
-  mem0Search,
-  mem0Add,
-  streamCollector,
-} from "./utils.ts";
+
+import { generateEmbedding, mem0Search, streamCollector } from "./utils.ts";
+
+import { ChatQueue } from "../shared/queue-config.ts";
 import { logger } from "../conf/logger.ts";
+
+import type { ChatCompletionChunk } from "openai/resources";
+
+/* -------------------- helpers -------------------- */
+
+const drainStream = async (stream: AsyncIterable<any>) => {
+  for await (const _ of stream) {
+  }
+};
 
 const makeRetrieval = (overrides = {}): any => ({
   message: "What is gradient descent?",
@@ -81,11 +95,13 @@ const makeMem0Add = (): any => ({
   userId: "user-1",
 });
 
-const QUERY_VECTOR = Array.from({ length: 1024 }, () => 0.1);
+const QUERY_VECTOR = Array.from({ length: 10 }, () => 0.1);
 
 const makeTopCandidates = (score = 0.9) => [
   { text: "doc1", score, page: 1, isVisual: false, imageUrl: null },
 ];
+
+/* -------------------- setup -------------------- */
 
 const setupHappyPath = (score = 0.9) => {
   vi.mocked(getSTM).mockResolvedValue([]);
@@ -97,18 +113,21 @@ const setupHappyPath = (score = 0.9) => {
   vi.mocked(stmContext).mockReturnValue("stm");
   vi.mocked(contextString).mockReturnValue("ctx");
   vi.mocked(Response).mockReturnValue("prompt");
+
   vi.mocked(llmResponse).mockResolvedValue("final answer");
+
   vi.mocked(addSTMMessage).mockResolvedValue(undefined as any);
-  vi.mocked(handleMemoryCompression).mockResolvedValue(undefined);
 
   vi.mocked(streamCollector).mockImplementation(
-    async (llmPromise, onComplete) => {
+    async function* (llmPromise, onFinish) {
       const finalText = await llmPromise;
-      if (onComplete) await onComplete(finalText);
-      return finalText;
+      yield { choices: [{ delta: { content: finalText } }] } as any;
+      await onFinish(finalText);
     },
   );
 };
+
+/* -------------------- tests -------------------- */
 
 describe("retriveContext", () => {
   afterEach(() => vi.clearAllMocks());
@@ -122,7 +141,13 @@ describe("retriveContext", () => {
       makeMem0Add(),
     );
 
-    expect(await result.stream).toBe("final answer");
+    const chunks: string[] = [];
+
+    for await (const chunk of result.stream as AsyncIterable<any>) {
+      chunks.push(chunk.choices[0].delta?.content ?? "");
+    }
+
+    expect(chunks.join("")).toBe("final answer");
     expect(result.sources.length).toBe(1);
   });
 
@@ -137,7 +162,7 @@ describe("retriveContext", () => {
     );
 
     expect(result).toEqual({
-      answer: expect.stringContaining("could not find"),
+      answer: "I could not find any relevant notes for your question.",
       sources: [],
     });
   });
@@ -169,37 +194,44 @@ describe("retriveContext", () => {
   it("fires addSTMMessage (fire-and-forget)", async () => {
     setupHappyPath();
 
-    await retriveContext(makeRetrieval(), makeMem0Search(), makeMem0Add());
+    const result = await retriveContext(
+      makeRetrieval(),
+      makeMem0Search(),
+      makeMem0Add(),
+    );
+
+    await drainStream(
+      result.stream as AsyncGenerator<ChatCompletionChunk, void, unknown>,
+    );
 
     await vi.waitFor(() => {
-      expect(addSTMMessage).toHaveBeenCalledTimes(2);
+      expect(addSTMMessage).toHaveBeenCalledTimes(1);
     });
   });
 
-  it("fires handleMemoryCompression", async () => {
+  it("queues persistence job after stream completes", async () => {
     setupHappyPath();
 
-    await retriveContext(makeRetrieval(), makeMem0Search(), makeMem0Add());
+    const result = await retriveContext(
+      makeRetrieval(),
+      makeMem0Search(),
+      makeMem0Add(),
+    );
 
-    await vi.waitFor(() => {
-      expect(handleMemoryCompression).toHaveBeenCalled();
-    });
+    for await (const _ of result.stream as AsyncIterable<any>) {
+    }
+
+    await new Promise((r) => setTimeout(r, 10));
+
+    expect(ChatQueue.add).toHaveBeenCalledWith(
+      "persist-chat",
+      expect.objectContaining({
+        sessionId: "sess-123",
+        assistantMessage: "final answer",
+        mem0Payload: expect.any(Object),
+      }),
+    );
   });
-
-  it("mem0Add called inside compression callback", async () => {
-    setupHappyPath();
-
-    vi.mocked(handleMemoryCompression).mockImplementation(async (_id, cb) => {
-      await cb("summary");
-    });
-
-    await retriveContext(makeRetrieval(), makeMem0Search(), makeMem0Add());
-
-    await vi.waitFor(() => {
-      expect(mem0Add).toHaveBeenCalled();
-    });
-  });
-
   it("does not throw when addSTMMessage fails", async () => {
     setupHappyPath();
     vi.mocked(addSTMMessage).mockRejectedValue(new Error("fail"));
@@ -209,9 +241,9 @@ describe("retriveContext", () => {
     ).resolves.toBeDefined();
   });
 
-  it("does not throw when handleMemoryCompression fails", async () => {
+  it("does not throw when ChatQueue fails", async () => {
     setupHappyPath();
-    vi.mocked(handleMemoryCompression).mockRejectedValue(new Error("fail"));
+    vi.mocked(ChatQueue.add).mockRejectedValue(new Error("queue fail"));
 
     await expect(
       retriveContext(makeRetrieval(), makeMem0Search(), makeMem0Add()),

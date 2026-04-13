@@ -54,7 +54,7 @@ const envSchema = z.object({
 
   //SUMMARIZER AI
   SUMMARIZER_AI_TOKEN: z.string().min(1, "SUMMARIZER_AI_TOKEN is required"),
-  SUMMARIZER_AI_URL: z.string().min(1, "SUMMARIZER_AI_URL is required"),
+  SUMMARIZER_AI_URL: z.string().url("SUMMARIZER_AI_URL is required"),
 });
 
 // Parse process.env and export the validated object
