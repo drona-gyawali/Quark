@@ -5,35 +5,46 @@ import {
   Response,
   getSTM,
   addSTMMessage,
-  handleMemoryCompression,
   stmContext,
 } from "./helpers.ts";
+
 import type { mem0RequestAdd, mem0RequestSearch } from "./pipeline.js";
 import { env } from "../conf/conf.ts";
-import { generateEmbedding, mem0Search, mem0Add } from "./utils.ts";
+
+import { generateEmbedding, mem0Search, streamCollector } from "./utils.ts";
+
 import { RetrivalExecption } from "./exec.ts";
 import { SIMILARITY_THRESHOLD, VECTOR_LIMIT } from "./consts.ts";
 import { EmbedRequestInputType } from "voyageai";
 import { logger } from "../conf/logger.ts";
+import { ChatQueue } from "../shared/queue-config.ts";
 
 export const retriveContext = async (
   retrival: mem0RequestSearch,
   _mem0Search: mem0RequestSearch,
   _mem0Add: mem0RequestAdd,
 ) => {
+  logger.info(`[RETRIEVAL ENGINE] started`);
+
   try {
-    const stmMessage = await getSTM(retrival.sessionId ?? "");
+    const sessionId = retrival.sessionId ?? "";
+
+    const stmMessage = await getSTM(sessionId);
+
     const contextMemory = await mem0Search(_mem0Search);
+
     const queryVector = (await generateEmbedding(
       retrival.message,
       EmbedRequestInputType.Query,
     )) as number[];
+
     const topCandidates = await getRelevantContext(
       env.COLLECTION_NAME,
       retrival.message,
       queryVector,
       VECTOR_LIMIT,
     );
+
     if (
       topCandidates.length === 0 ||
       (topCandidates[0].score ?? 0) < SIMILARITY_THRESHOLD
@@ -43,44 +54,39 @@ export const retriveContext = async (
         sources: [],
       };
     }
-    const _contextString = contextString(topCandidates);
+
     const finalPrompt = Response(
-      `${stmContext(stmMessage)}\n${contextMemory}\n${_contextString}`,
+      `${stmContext(stmMessage)}\n${contextMemory}\n${contextString(topCandidates)}`,
       retrival.message,
     );
-    const answer = await llmResponse(undefined, finalPrompt);
 
-    void addSTMMessage(retrival.sessionId ?? "", {
+    const llmStream = llmResponse(undefined, finalPrompt);
+    // TODO: when we scale, we have to think of better use...
+    const stream = streamCollector(llmStream, async (finalText) => {
+      try {
+        await ChatQueue.add("persist-chat", {
+          sessionId,
+          assistantMessage: finalText,
+          mem0Payload: _mem0Add,
+        });
+        logger.info(`[Quark] Job queued for session: ${sessionId}`);
+      } catch (error) {
+        logger.error(`[Quark] Queue push failed: ${error}`);
+      }
+    });
+
+    addSTMMessage(sessionId, {
       role: "user",
       content: retrival.message,
-    }).catch((err) => logger.error(`Failed to store user STM message: ${err}`));
-
-    void addSTMMessage(retrival.sessionId ?? "", {
-      role: "assistant",
-      content: answer,
-    }).catch((err) =>
-      logger.error("Failed to store assistant STM message:", err),
-    );
-
-    void handleMemoryCompression(
-      retrival.sessionId ?? "",
-      async (summary: string) => {
-        const payload = {
-          ..._mem0Add,
-          messages: [{ role: "system", content: summary }],
-        };
-        await mem0Add(payload).catch((err) =>
-          logger.error("Failed to save LTM summary:", err),
-        );
-      },
-    ).catch((err) => logger.error("Memory compression failed:", err));
+    }).catch((err) => logger.error(`Failed to save user message: ${err}`));
 
     return {
-      answer,
-      sources: [],
+      stream,
+      sources: topCandidates,
     };
   } catch (error) {
-    logger.error(`Retrival Error: ${error}`);
+    logger.error(`Retrieval Error: ${error}`);
+
     throw new RetrivalExecption(
       `Error while processing retrieval layer: ${error}`,
     );

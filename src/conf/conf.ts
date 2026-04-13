@@ -51,6 +51,10 @@ const envSchema = z.object({
   OBJECT_NAME: z.string().min(1, "OBJECT_NAME is required"),
   OBJECT_ID: z.string().min(1, "OBJECT_ID is required"),
   OBJECT_ACCESS_KEY: z.string().min(1, "OBJECT_ACCESS_KEY is required"),
+
+  //SUMMARIZER AI
+  SUMMARIZER_AI_TOKEN: z.string().min(1, "SUMMARIZER_AI_TOKEN is required"),
+  SUMMARIZER_AI_URL: z.string().url("SUMMARIZER_AI_URL is required"),
 });
 
 // Parse process.env and export the validated object
@@ -106,11 +110,11 @@ export function vector(): QdrantClient {
   }
 }
 
-export function llm(): OpenAI {
+export function llm(LLM_TOKEN: string, LLM_URL: string): OpenAI {
   try {
     const conn = new OpenAI({
-      apiKey: env.LLM_TOKEN,
-      baseURL: env.LLM_URL,
+      apiKey: LLM_TOKEN,
+      baseURL: LLM_URL,
     });
 
     return conn;

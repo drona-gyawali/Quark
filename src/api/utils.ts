@@ -8,11 +8,11 @@ import { type IngestionHelper } from "../lib/lib.ts";
 import type {
   mem0RequestAdd,
   mem0RequestSearch,
-  RetrivalRequest,
 } from "../pipeline-processing/pipeline.js";
 import { dumpChatHistory } from "../service/chat.ts";
 import { db } from "../lib/superbase.ts";
 import { randomUUID } from "node:crypto";
+import { streamCollector } from "../pipeline-processing/utils.ts";
 
 export const ingestion_helper = async (
   ingest: IngestionHelper,
@@ -45,7 +45,7 @@ export const ingestion_helper = async (
 };
 
 export const retriver_helper = async (
-  retrive: RetrivalRequest,
+  retrive: mem0RequestSearch,
   search: mem0RequestSearch,
   add: mem0RequestAdd,
 ) => {
@@ -58,14 +58,6 @@ export const retriver_helper = async (
 
   try {
     const res = await retriveContext(retrive, search, add);
-    const assistantAnswer = res.answer;
-
-    dumpChatHistory({
-      session_id: String(sessionId),
-      role: "assistant",
-      content: assistantAnswer,
-    }).catch((err) => logger.error(`Background Assistant Log Failed: ${err}`));
-
     return res;
   } catch (error: any) {
     const errorMsg = error?.message ?? String(error);

@@ -3,6 +3,8 @@ import { retriver_helper } from "../utils.ts";
 import { viewChats } from "../../service/chat.ts";
 import { deleteChats } from "../../service/chat.ts";
 import type { User } from "@supabase/supabase-js";
+import type { ChatCompletionChunk } from "openai/resources";
+import { logger } from "../../conf/logger.ts";
 
 export const RetriveView = new Elysia({ prefix: "/chat", })
     .decorate('user', null as unknown as User | null)
@@ -59,10 +61,34 @@ export const RetriveView = new Elysia({ prefix: "/chat", })
                 { message: body.message, userId: userId, sessionId: body.sessionId, query: body.message, response: "" } as any
             );
 
-            return {
-                success: true,
-                data: result.answer
-            };
+            set.headers['Content-Type'] = 'text/event-stream';
+
+            return new ReadableStream({
+                async start(controller) {
+                    const encoder = new TextEncoder()
+                    try {
+                        if(!result?.stream) {
+                            logger.error(`Stream is undefined or empty`)
+                            controller.enqueue(encoder.encode(`data: ${JSON.stringify({error: "No stream available"})}\n\n`))
+                            return;
+                        }
+                        for await (const chunk of result?.stream as  AsyncGenerator<ChatCompletionChunk, void, unknown>){
+                            const content = chunk.choices[0].delta?.content ?? ""
+                            if(content) {
+                                controller.enqueue(encoder.encode(`data: ${JSON.stringify({ content })}\n\n`));
+                            }
+                        }
+                        logger.info(`LLM streaming completed`)
+                        controller.enqueue(encoder.encode(`data: [DONE]\n\n`))
+                    } catch(streamError) {
+                        logger.error(`Streaming error occured : ${streamError}`)
+                        controller.enqueue(encoder.encode(`data: ${JSON.stringify({error: "Stream Error"})}\n\n`))
+                    } 
+                    finally {
+                        controller.close();
+                    }
+                }
+            })
 
         } catch (error: any) {
             set.status = 500;
