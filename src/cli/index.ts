@@ -237,25 +237,24 @@ async function cmdQuery(text: string): Promise<void> {
   const { retriveContext } = await import("../pipeline-processing/retrival.ts");
   const sess = active();
   const username = user?.username ?? "user";
+
   if (!sess) {
     wl(`  ${G.cross}  No active session.`, C.red);
     return;
   }
-  const sid = sess.id;
 
+  const sid = sess.id;
   printUserMsg(username, text, nowTS());
   appendChat(sid, "user", text);
+
   const stopSpinner = startSpinner("Thinking");
 
-  let answer = "";
+  let fullAnswer = "";
   let isError = false;
+
   try {
     const res = await retriveContext(
-      {
-        message: text,
-        userId: username,
-        sessionId: sid,
-      } as any,
+      { message: text, userId: username, sessionId: sid } as any,
       { message: text, userId: username, sessionId: sid } as any,
       {
         message: text,
@@ -265,21 +264,34 @@ async function cmdQuery(text: string): Promise<void> {
         response: "",
       } as any,
     );
-    answer = res.answer;
+
+    // 1. Handle the Stream Case
+    if (res.stream) {
+      stopSpinner(); // Stop spinner early to start showing chunks
+      for await (const chunk of res.stream) {
+        const content = chunk.choices[0]?.delta?.content || "";
+        fullAnswer += content;
+      }
+    }
+    // 2. Handle the Static Answer Case
+    else if (res.answer) {
+      fullAnswer = res.answer;
+    }
   } catch (e: any) {
-    answer = e?.message ?? String(e);
+    fullAnswer = e?.message ?? String(e);
     isError = true;
   } finally {
-    stopSpinner();
+    stopSpinner(); // Ensure it stops if it hasn't already
+
     if (isError) {
-      printErrMsg(answer);
-      appendChat(sid, "system", answer);
+      printErrMsg(fullAnswer);
+      appendChat(sid, "system", fullAnswer);
     } else {
-      appendChat(sid, "assistant", answer);
-      printBotMsg(answer, nowTS());
+      appendChat(sid, "assistant", fullAnswer);
+      printBotMsg(fullAnswer, nowTS());
     }
   }
-  // Let fire-and-forget pipeline tasks flush their log writes before next prompt
+
   await new Promise((r) => setTimeout(r, 300));
 }
 
