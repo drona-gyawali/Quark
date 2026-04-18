@@ -20,10 +20,17 @@ jobs:
           filters: |
             frontend:
               - 'frontend/**'
+              - '.github/workflows/**'
             backend:
               - 'src/**'
               - 'package.json'
-              - 'tsconfig.json'
+              - 'package-lock.json'
+              - 'tsconfig*.json'
+              - 'eslint.config.*'
+              - '.prettierrc*'
+              - 'vitest.config.*'
+              - 'patches/**'
+              - '.github/workflows/**'
 
   lint-and-test:
     needs: changes
