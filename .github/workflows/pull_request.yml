@@ -7,10 +7,28 @@ on:
     branches: ["**"]
 
 jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      frontend: ${{ steps.filter.outputs.frontend }}
+      backend: ${{ steps.filter.outputs.backend }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            frontend:
+              - 'frontend/**'
+            backend:
+              - 'src/**'
+              - 'package.json'
+              - 'tsconfig.json'
+
   lint-and-test:
+    needs: changes
     name: Lint & Test
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -21,11 +39,22 @@ jobs:
           node-version: 20
           cache: "npm"
 
-      - name: Install dependencies
+      - name: Install Root/Backend Dependencies
+        if: needs.changes.outputs.backend == 'true'
         run: npm ci
 
-      - name: Check formatting (Prettier)
-        run: npm run format:check
+      - name: Backend Lint & Test
+        if: needs.changes.outputs.backend == 'true'
+        run: |
+          npm run format:check
+          npm test
 
-      - name: Run tests
-        run: npm test
+      - name: Install Frontend Dependencies
+        if: needs.changes.outputs.frontend == 'true'
+        run: cd frontend && npm ci
+
+      - name: Frontend Lint & Check
+        if: needs.changes.outputs.frontend == 'true'
+        run: |
+          cd frontend
+          npm run format:check
