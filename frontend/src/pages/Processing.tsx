@@ -107,7 +107,7 @@ export function Processing() {
                     </span>
                   </div>
                   <button className="flex items-center gap-2 text-xs font-bold text-white bg-zinc-800 hover:bg-zinc-700 px-4 py-2 rounded-md transition-all">
-                    Open Inspector <ExternalLink className="w-3 h-3" />
+                  <Link to={`/c/${data?.session_id}`}>Open Inspector <ExternalLink className="w-3 h-3" /></Link>
                   </button>
                 </div>
               ) : (
