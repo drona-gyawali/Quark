@@ -13,7 +13,7 @@ export function useCreateSession() {
     },
     onSuccess: (sessionId) => {
       queryClient.invalidateQueries({ queryKey: ["sessionId"] });
-      navigate(`/chat/${sessionId}`);
+      navigate(`/c/${sessionId}`);
     },
     onError: () => {
       navigate(`/error`);
