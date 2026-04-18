@@ -94,7 +94,7 @@ export function AppSidebar() {
                         className="hover:bg-sidebar-accent transition-colors"
                       >
                         <Link
-                          to={`/chat/${chat.id}`}
+                          to={`/c/${chat.id}`}
                           className="flex flex-col items-start py-2 h-auto"
                         >
                           <div className="flex items-center gap-2 w-full">
