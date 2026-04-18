@@ -9,8 +9,8 @@
     "build": "rm -rf dist && tsc -p tsconfig.build.json",
     "start": "NODE_ENV=production node dist/index.js",
     "cli": "npx tsx -r ./src/cli/preload.cjs src/cli/index.ts",
-    "worker:ingestion": "tsx dist/workers/ingestion-worker.js",
-    "worker:chat": "tsx dist/workers/chat-queue-worker.js",
+    "worker:ingestion": "tsx src/workers/ingestion-worker.ts",
+    "worker:chat": "tsx src/workers/chat-queue-worker.ts",
     "esbuild": "esbuild src/index.ts --bundle --platform=node --outfile=dist/index.js",
     "lint": "eslint src/**/*.ts",
     "lint:fix": "eslint src/**/*.ts --fix",
@@ -78,6 +78,6 @@
     "redis": "^4.7.1",
     "unstructured-client": "^0.24.1",
     "voyageai": "^0.2.1",
-    "zod": "^4.3.6"
+    "zod": "^3.25.76"
   }
 }

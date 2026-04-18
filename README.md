@@ -1,7 +1,6 @@
-
 <p align="center">
-  <img  width="397" height="175" alt="Screenshot_from_2026-03-18_17-22-09-removebg-preview"
-src="https://github.com/user-attachments/assets/e688f6fe-6148-4166-8669-c1fc38139f32" />
+<img width="246" height="73" alt="image" src="https://github.com/user-attachments/assets/6fe31791-471d-4fa8-bddc-9c6826911663" />
+
 </p>
    
 
@@ -10,19 +9,32 @@ A high-performance RAG (Retrieval-Augmented Generation) system designed for deep
 
 ---
 
-<img width="1024" height="1024" alt="image" src="https://github.com/user-attachments/assets/d3b63447-936a-4cc1-9333-2b8aadf5a741" />
+<img width="1124" height="610" alt="image" src="https://github.com/user-attachments/assets/a54549e5-ddef-4392-bfeb-7b5fe8325d24" />
+
+---
 
 ## Architecture Overview
 
 Quark distinguishes itself through a multi-stage pipeline:
 
-* **Multimodal Ingestion:** Uses `Unstructured.io` for text partitioning and `pdfplumber` for precise image extraction. A custom **Sync Layer** aligns these modalities for comprehensive embedding.
-* **Dual-Stream Memory:** 
-    *  **Short-Term Memory (STM):** Powered by **Redis** for rapid session-based context.
-    * **Long-Term Memory (LTM):** Powered by **Mem0** to retain user history and preferences over time.
-* **Local Chat History:** All conversation logs are stored in a local **SQLite** database, ensuring your data stays on your system.
-* **Interface:** A streamlined **CLI UI** for interacting with your documents.
+#### Multimodal Ingestion
+* **Partitioning:** Leveraging `Unstructured.io` for semantic text decomposition and layout analysis.
+* **Extraction:** Utilizing `pdfplumber` for precise image and table coordinate extraction.
+* **Sync Layer:** A custom orchestration layer that aligns text and visual modalities for comprehensive multimodal embeddings.
 
+#### Dual-Stream Memory
+* **STM (Short-Term Memory):** Powered by **Redis**. Provides sub-millisecond access to rapid session-based context and transient state.
+* **LTM (Long-Term Memory):** Powered by **Mem0**. Acts as a persistent intelligence layer that retains user history, evolving preferences, and long-form knowledge over time.
+
+#### Core Intelligence & Retrieval
+* **Embedding & Reranking:** Powered by **Voyage AI**, utilizing advanced rerankers and metadata filtering to maximize retrieval precision.
+* **Vector Infrastructure:**  **Qudrant** handles high-dimensional vector storage alongside robust relational metadata.
+
+#### Technical Stack
+* **Web Framework:** [ElysiaJS](https://elysiajs.com/) — The high-performance, Bun-native framework for the backend.
+* **Identity & DB:** [Supabase](https://supabase.com/) — Unified Auth and PostgreSQL backend.
+* **Frontend:** [React](https://react.dev/) — A minimalist, streaming-responsive interface optimized for real-time AI interactions.
+* **Worker(BullMQ + Redis):** — Persistent workers. Heavy I/O and compute offloaded. Scalability by design. Powered by BullMQ and Redis."
 ---
 
 ### Getting Started
@@ -44,16 +56,30 @@ We provide a setup script to handle dependency installation and environment chec
 ### 2. Configure Environment Variables
 Before  launching the cli, you must set up your credentials. inside a `.env` file in the root directory and populate it with your API keys
 
-### 3. Launching the CLI
-Once the setup is complete, you can start chatting with your documents immediately via the terminal interface.
+### 3. Launching the Ingestion worker in seperate process
+```bash
+npm run worker:ingestion
+```
+
+### 4. Launching the retrieval engine for query preprocessing and Database Action
+```bash
+npm run worker:chat
+``` 
+
+### 5. Launching the Frontend
+Once the setup is complete, you can start chatting with your documents immediately via the  web interface.
 
 ```bash
-npm run cli
+cd frontend
+npm install
+npm run dev
 ```
-> Interface
-> <img width="804" height="683" alt="image" src="https://github.com/user-attachments/assets/5e462f16-fc0c-4107-a9c0-e30a3597b75c" />
-> <img width="1108" height="611" alt="image" src="https://github.com/user-attachments/assets/f30fb219-b474-41a6-afba-c8840df0a78a" />
 
+> Interface
+
+> <img width="1362" height="621" alt="image" src="https://github.com/user-attachments/assets/59b0c185-8de0-482b-b566-a34d350913ec" />
+
+> <img width="1364" height="619" alt="image" src="https://github.com/user-attachments/assets/b1ffa57a-1a98-4196-9720-c90f2bc08c33" />
 
 ---
 
