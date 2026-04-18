@@ -9,7 +9,7 @@ export function useCreateSession() {
   return useMutation({
     mutationFn: async (label: string) => {
       const data = await createSession({ label });
-      if(!data?.data?.id) {
+      if (!data?.data?.id) {
         throw new Error("Session creation did not return an id");
       }
       return data.data.id;
