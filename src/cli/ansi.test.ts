@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 
 const writeMock = vi.fn();
 vi.stubGlobal("process", {
@@ -109,6 +109,9 @@ describe("cols()", () => {
 });
 
 describe("nowTS()", () => {
+  beforeEach(() => {
+    vi.useRealTimers(); // Ensure we aren't stuck in a fake timer loop
+  });
   it("returns a time string matching HH:MM format", () => {
     expect(nowTS()).toMatch(/^\d{1,2}:\d{2}( [AP]M)?$/);
   });
