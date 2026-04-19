@@ -1,11 +1,6 @@
 import { spawn } from "child_process";
 import path from "path";
-import { fileURLToPath } from "url";
 import { logger } from "../conf/logger.ts";
-
-// TODO: add worker to scale it in prod...
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 export const getLocalImages = (
   pdfPath: string,
@@ -13,10 +8,13 @@ export const getLocalImages = (
   return new Promise((resolve, reject) => {
     const absolutePdfPath = path.resolve(pdfPath);
 
-    const pythonPath = path.join(process.cwd(), "venv", "bin", "python");
+    const rootDir = process.cwd();
+
+    const pythonPath = path.join(rootDir, "venv", "bin", "python");
+    const scriptPath = path.join(rootDir, "bin", "vision-worker.py");
 
     const pythonProcess = spawn(pythonPath, [
-      path.join(__dirname, "vision-worker.py"),
+      scriptPath,
       absolutePdfPath,
     ]);
 
