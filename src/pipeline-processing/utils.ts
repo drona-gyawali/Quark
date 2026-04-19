@@ -70,7 +70,7 @@ export const describeVisualElements = async (
                 base64Image,
               );
 
-              logger.info(`Visual Anlaysis has been generated: ${description}`)
+              logger.info(`Visual Anlaysis has been generated: ${description}`);
               return {
                 ...ele,
                 text: `${ele.text}\n\n[Visual Analysis]: ${description}`,
@@ -119,7 +119,7 @@ export const describeVisualElements = async (
 
     return processed;
   } catch (error: any) {
-    logger.error(`Visual processing failed: ${error.message}`)
+    logger.error(`Visual processing failed: ${error.message}`);
     throw new PipelineException(`Visual processing failed: ${error.message}`);
   }
 };

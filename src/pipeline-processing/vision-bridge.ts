@@ -13,10 +13,7 @@ export const getLocalImages = (
     const pythonPath = path.join(rootDir, "venv", "bin", "python");
     const scriptPath = path.join(rootDir, "bin", "vision-worker.py");
 
-    const pythonProcess = spawn(pythonPath, [
-      scriptPath,
-      absolutePdfPath,
-    ]);
+    const pythonProcess = spawn(pythonPath, [scriptPath, absolutePdfPath]);
 
     let dataString = "";
     let errorString = "";
