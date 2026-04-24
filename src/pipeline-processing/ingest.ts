@@ -17,13 +17,40 @@ export const ingestDocument = async (
   try {
     logger.debug("[INGESTION] Starting document ingestion...");
 
-    const [raw, localImages] = await Promise.all([
+    const [raw, visionResult] = await Promise.all([
       partitionDocument(fileBuffer, fileName),
-      getLocalImages(fileName),
+      getLocalImages(fileBuffer),
     ]);
-    const finalElements = visionMaker(raw, localImages, fileName);
 
+    const imageCounts = visionResult.images.reduce(
+      (acc: Record<number, number>, img) => {
+        acc[img.page] = (acc[img.page] || 0) + 1;
+        return acc;
+      },
+      {},
+    );
+
+    logger.debug(
+      `[DEBUG] Images extracted per page: ${JSON.stringify(imageCounts)}`,
+    );
+
+    logger.debug(
+      `[DEBUG] visionMaker received ${raw.length} elements and ${visionResult.images.length} images`,
+    );
+
+    const finalElements = visionMaker(raw, visionResult, fileName);
+
+    const assignedCount = finalElements.filter(
+      (e) => e.metadata?.image_url,
+    ).length;
+
+    logger.debug(
+      `[DEBUG] Final elements after visionMaker: ${finalElements.length}, with image_url: ${assignedCount}`,
+    );
+
+    // TODO: we can reduce cost if we batch here
     const enriched = await describeVisualElements(finalElements);
+
     const visualCount = enriched.filter(
       (el) => el.metadata?.visual_description,
     ).length;

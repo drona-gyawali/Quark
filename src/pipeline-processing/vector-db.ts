@@ -63,7 +63,6 @@ export const getRelevantContext = async (
     const results = await vector().search(collectionName, {
       vector: queryVector,
       limit: limit,
-      // TODO: we might be benefit using filter for better reterival...
       with_payload: true,
     });
 

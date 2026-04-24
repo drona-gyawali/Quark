@@ -48,6 +48,29 @@ export const createPresignedUrl = async (genKey: Key, userId: string) => {
   }
 };
 
+export const getContentAccess = async ({
+  key,
+  expiresIn = 300,
+}: {
+  key: string;
+  expiresIn?: number;
+}) => {
+  try {
+    const command = new GetObjectCommand({
+      Bucket: process.env.OBJECT_NAME,
+      Key: key,
+    });
+    const s3Client = storage();
+    const url = await getSignedUrl(s3Client, command, {
+      expiresIn,
+    });
+
+    return url;
+  } catch (error) {
+    throw new StorageException(`Unable to create access link ${error}`);
+  }
+};
+
 export const getFile = async (key: string) => {
   try {
     const command = new GetObjectCommand({

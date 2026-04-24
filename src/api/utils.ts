@@ -12,7 +12,6 @@ import type {
 import { dumpChatHistory } from "../service/chat.ts";
 import { db } from "../lib/superbase.ts";
 import { randomUUID } from "node:crypto";
-import { streamCollector } from "../pipeline-processing/utils.ts";
 
 export const ingestion_helper = async (
   ingest: IngestionHelper,

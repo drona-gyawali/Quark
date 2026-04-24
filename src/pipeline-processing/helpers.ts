@@ -14,6 +14,8 @@ import crypto from "node:crypto";
 import { marked } from "marked";
 import prompts from "./prompts.json" with { type: "json" };
 import { logger } from "../conf/logger.ts";
+import type { Key } from "../lib/lib.ts";
+import { createPresignedUrl } from "../service/object.ts";
 
 export const getStaticPrompt = (eleType: string) => {
   return eleType === "Image" ? DIAGRAM_TEXT : TABLE_TEXT;
@@ -123,7 +125,7 @@ export const llmResponse = async (base64Image?: string, message?: string) => {
     ).chat.completions.create({
       model: env.LLM_MODEL,
       messages,
-      max_tokens: 400,
+      max_tokens: 1000,
       temperature: 0.4,
       stream: true,
     });
@@ -146,24 +148,31 @@ export const llmResponse = async (base64Image?: string, message?: string) => {
 
 export const nonStreamLLM = async (
   conversation: string,
-  base64Image?: string,
+  imageInput?: { base64?: string; url?: string },
 ) => {
   try {
     logger.info(`Starting the nonStreamLLM`);
-    const hasImage =
-      typeof base64Image === "string" && base64Image.length > 200;
-    // Prepare the content structure
     let contentPayload: any;
 
-    if (hasImage) {
-      logger.info(`Starting to read the image data`);
-      const mimeType = mimeType_(base64Image);
+    if (imageInput?.url) {
       contentPayload = [
         { type: "text", text: conversation },
         {
           type: "image_url",
           image_url: {
-            url: `data:${mimeType};base64,${base64Image}`,
+            url: imageInput.url,
+          },
+        },
+      ];
+    } else if (imageInput?.base64) {
+      const mimeType = mimeType_(imageInput.base64);
+
+      contentPayload = [
+        { type: "text", text: conversation },
+        {
+          type: "image_url",
+          image_url: {
+            url: `data:${mimeType};base64,${imageInput.base64}`,
           },
         },
       ];

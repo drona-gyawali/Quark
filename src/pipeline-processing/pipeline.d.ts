@@ -3,7 +3,7 @@ export interface DocumentElement {
   type: string;
   text?: string;
   metadata?: {
-    image_base64?: string;
+    imageUrl?: string;
     [key: string]: any;
   };
 }
@@ -36,3 +36,11 @@ export interface ChatMessage {
   content: string;
   timestamp?: number;
 }
+
+export type VisionResult = {
+  doc_id: string;
+  images: {
+    page: number;
+    s3_key: string;
+  }[];
+};
