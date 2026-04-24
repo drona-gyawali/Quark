@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useMemo } from "react";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { useInView } from "react-intersection-observer";
 import { useChat } from "@/hooks/use-chat";
+import TextareaAutosize from "react-textarea-autosize";
 import {
   Send,
   Square,
@@ -363,7 +364,7 @@ export default function ChatPage() {
         </div>
       </div>
 
-      <div className="p-4 bg-background/90 backdrop-blur-md border-t border-zinc-800">
+      <div className="p-4">
         <div className="max-w-3xl mx-auto relative">
           {showScrollButton && (
             <button
@@ -374,21 +375,23 @@ export default function ChatPage() {
             </button>
           )}
 
-          <div className="flex items-end gap-3 bg-zinc-900 border border-zinc-700 focus-within:border-zinc-500 rounded-3xl ">
+          <div className="flex items-end gap-2 bg-[#0F0F0F] border border-zinc-800 focus-within:border-zinc-700 rounded-[28px] p-2 transition-all duration-300 shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
             <button
               onClick={() => setIsIngestOpen(true)}
-              className="cursor-pointer  pb-3 h-11 w-11 flex items-center justify-center text-zinc-400 hover:text-white  rounded-2xl transition-all ml-1"
               title="Add document"
+              className=" h-10 w-10 cursor-pointer shrink-0 flex items-center justify-center text-zinc-500 hover:text-white hover:bg-zinc-800 rounded-full transition-all mb-0.5 ml-0.5"
             >
-              <Plus size={19} strokeWidth={2.5} />
+              <Plus size={20} strokeWidth={2.5} />
             </button>
             <IngestModal open={isIngestOpen} setOpen={setIsIngestOpen} />
-            <textarea
+
+            <TextareaAutosize
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Ask anything... (You can also add documents)"
-              rows={1}
-              className="flex-1 bg-transparent scrollbar-modern p-4 focus:outline-none resize-none max-h-52 text-[15.5px] placeholder-zinc-500"
+              placeholder="Ask anything about you docs..."
+              minRows={1}
+              maxRows={8}
+              className="flex-1 bg-transparent py-3 px-1 focus:outline-none resize-none text-[15.5px] leading-relaxed placeholder-zinc-500 text-zinc-200 scrollbar-none"
               onKeyDown={(e) => {
                 if (e.key === "Enter" && !e.shiftKey) {
                   e.preventDefault();
@@ -397,27 +400,32 @@ export default function ChatPage() {
               }}
             />
 
-            <div className="pb-2 pr-3">
+            <div className="mb-0.5 mr-0.5">
               <button
                 onClick={isSending ? stop : handleSend}
                 disabled={!input.trim() && !isSending}
-                className={`h-10 w-10 flex items-center justify-center rounded-2xl transition-all ${
+                className={`h-10 w-10 flex cursor-pointer items-center justify-center rounded-full transition-all duration-300 ${
                   isSending
                     ? "bg-red-500/10 text-red-500 hover:bg-red-500/20"
-                    : "bg-white text-black hover:bg-zinc-100 disabled:bg-zinc-800 disabled:text-zinc-600"
+                    : "bg-white text-black hover:bg-zinc-200 disabled:bg-zinc-900 disabled:text-zinc-700 shadow-md"
                 }`}
               >
                 {isSending ? (
-                  <Square size={18} fill="currentColor" />
+                  <Square size={16} fill="currentColor" />
                 ) : (
-                  <Send size={18} />
+                  <Send
+                    size={16}
+                    className={
+                      input.trim() ? "translate-x-0.5 -translate-y-0.5" : ""
+                    }
+                  />
                 )}
               </button>
             </div>
           </div>
 
           <p className="text-center text-[10px] text-zinc-500 mt-3">
-            AI can make mistakes. Consider checking important info.
+            Quark is an AI can make mistakes. Consider checking important info.
           </p>
         </div>
       </div>
