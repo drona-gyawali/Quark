@@ -5,7 +5,6 @@ import { useState } from "react";
 import { useProfile } from "@/hooks/use-profile";
 
 export function Welcome() {
-  // TODO: zustland
   const { data: user } = useProfile();
   const [isIngestOpen, setIsIngestOpen] = useState(false);
 
