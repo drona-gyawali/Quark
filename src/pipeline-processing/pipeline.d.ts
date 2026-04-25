@@ -3,10 +3,12 @@ export interface DocumentElement {
   type: string;
   text?: string;
   metadata?: {
-    imageUrl?: string;
+    image_url?: string;
     [key: string]: any;
   };
 }
+
+type PartialDocumentElement = Partial<DocumentElement>;
 
 export interface PartitionOutput {
   elements: DocumentElement[];

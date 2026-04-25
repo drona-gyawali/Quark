@@ -4,7 +4,6 @@ import { PipelineException, RetrivalExecption } from "./exec.ts";
 import { unstructured, env, embedding, memoClient } from "../conf/conf.ts";
 import {
   getStaticPrompt,
-  isBase64,
   prepareBatchRecords,
   htmlTableToMarkdown,
   sleep,
@@ -17,11 +16,10 @@ import type {
 } from "./pipeline.ts";
 import { dumpToDb, ensureCollectionExists } from "./vector-db.ts";
 import { EmbedRequestInputType } from "voyageai";
-import type { PartitionResponse } from "unstructured-client/sdk/models/operations";
 import { logger } from "../conf/logger.ts";
 import type { Stream } from "openai/streaming";
 import type { ChatCompletionChunk } from "openai/resources";
-import type { VisionResult } from "./pipeline.ts";
+import type { VisionResult, PartialDocumentElement } from "./pipeline.ts";
 import { getContentAccess } from "../service/object.ts";
 
 // TODO: remove the image , figure and Graphic from the block types
@@ -206,7 +204,7 @@ export const processMetadata = async (elements: DocumentElement[]) => {
 };
 
 export const visionMaker = (
-  raw: PartitionResponse,
+  raw: PartialDocumentElement[],
   visionResult: VisionResult,
   fileName: string,
 ): DocumentElement[] => {
@@ -215,13 +213,16 @@ export const visionMaker = (
       throw new PipelineException("Partition did not return array of elements");
     }
 
-    const elements: DocumentElement[] = raw.map((ele: any) => ({ ...ele }));
+    const elements: DocumentElement[] = raw.map((ele: any) => ({
+      ...ele,
+      text: ele.text?.trim() || "[TEXT_UNAVAILABLE]",
+    }));
 
     visionResult.images.forEach((img, idx) => {
       elements.push({
         type: "Image",
         element_id: `vision-${img.page}-${idx}-${Date.now()}`,
-        text: "",
+        text: "[IMAGE_CONTENT]",
         metadata: {
           page_number: img.page,
           image_url: img.s3_key,

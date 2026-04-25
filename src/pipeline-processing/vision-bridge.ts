@@ -1,7 +1,11 @@
 import { spawn } from "child_process";
 import path from "path";
 import fs from "fs";
+import { fileURLToPath } from "node:url";
 import { logger } from "../conf/logger.ts";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 export const getLocalImages = (
   fileBuffer: Buffer,
@@ -18,19 +22,28 @@ export const getLocalImages = (
         ? path.join(projectRoot, "venv", "Scripts", "python.exe")
         : path.join(projectRoot, "venv", "bin", "python");
 
-    // 3. Set the Python Binary:
-    // Prioritize Env Var > Virtual Env > System Python
-    const pythonPath =
-      process.env.PYTHON_BIN ||
-      (fs.existsSync(venvPath) ? venvPath : "python3");
+    const envPython = process.env.PYTHON_BIN;
+
+    let pythonPath: string;
+    let isFallbackPython3 = false;
+
+    if (envPython) {
+      pythonPath = envPython;
+    } else if (fs.existsSync(venvPath)) {
+      pythonPath = venvPath;
+    } else {
+      pythonPath = "python3";
+      isFallbackPython3 = true;
+    }
 
     const scriptPath = path.join(projectRoot, "bin", "vision-worker.py");
 
-    // Logging for debugging
     logger.debug(`[CONFIG]: Using Python at: ${pythonPath}`);
     logger.debug(`[CONFIG]: Using Script at: ${scriptPath}`);
 
-    if (pythonPath !== "python3" && !fs.existsSync(pythonPath)) {
+    // --- Validation ---
+    // Only skip existence check if it's our fallback "python3"
+    if (!isFallbackPython3 && !fs.existsSync(pythonPath)) {
       const error = `Python binary not found at: ${pythonPath}`;
       logger.error(`[CONFIG ERROR]: ${error}`);
       return reject(new Error(error));
@@ -42,6 +55,7 @@ export const getLocalImages = (
       return reject(new Error(error));
     }
 
+    // --- Spawn Python Process ---
     const pythonProcess = spawn(pythonPath, [scriptPath]);
 
     let dataString = "";
@@ -68,7 +82,7 @@ export const getLocalImages = (
         try {
           const parsed = JSON.parse(dataString);
           resolve(parsed);
-        } catch (e) {
+        } catch {
           logger.error(`[PARSING ERROR]: Data was: ${dataString}`);
           reject(new Error("Failed to parse Python output as JSON"));
         }

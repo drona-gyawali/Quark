@@ -9,18 +9,17 @@ import asyncio
 from concurrent.futures import ThreadPoolExecutor
 from dotenv import load_dotenv
 load_dotenv()
-# -----------------------------
-# S3 CLIENT
-# -----------------------------
+
+
+BUCKET = os.environ["OBJECT_NAME"]
+
 s3 = boto3.client(
     "s3",
-    endpoint_url="https://s3.eu-central-2.idrivee2.com",
-    region_name="eu-central-2",
-    aws_access_key_id=os.getenv("OBJECT_ID"),
-    aws_secret_access_key=os.getenv("OBJECT_ACCESS_KEY"),
-)
-BUCKET = os.getenv("OBJECT_NAME")
-
+    endpoint_url=os.environ["OBJECT_ENDPOINT_URL"],
+    region_name=os.environ["OBJECT_REGION"],
+    aws_access_key_id=os.environ["OBJECT_ID"],
+    aws_secret_access_key=os.environ["OBJECT_ACCESS_KEY"],
+    )
 # -----------------------------
 # THREAD POOL (controls concurrency)
 # -----------------------------
@@ -121,16 +120,16 @@ def extract_page_images(page) -> list[bytes]:
 # Async upload of pre-extracted image bytes for one page
 # -----------------------------
 async def upload_page_images(image_bytes_list: list[bytes], doc_id: str, page_num: int):
-    results = []
     tasks = []
+    results = []
 
     for idx, image_bytes in enumerate(image_bytes_list):
         key = f"{doc_id}/page-{page_num}/{idx}.png"
-        tasks.append((async_upload(image_bytes, key), key))
-
-    for coro, key in tasks:
-        await coro
+        tasks.append(async_upload(image_bytes, key))
         results.append({"page": page_num, "s3_key": key})
+
+    # Start all uploads at once
+    await asyncio.gather(*tasks)
 
     return results
 

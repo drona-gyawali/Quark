@@ -22,6 +22,10 @@ export const ingestDocument = async (
       getLocalImages(fileBuffer),
     ]);
 
+    if (!Array.isArray(raw)) {
+      throw new PipelineException("Partition did not return array of elements");
+    }
+
     const imageCounts = visionResult.images.reduce(
       (acc: Record<number, number>, img) => {
         acc[img.page] = (acc[img.page] || 0) + 1;
@@ -48,7 +52,6 @@ export const ingestDocument = async (
       `[DEBUG] Final elements after visionMaker: ${finalElements.length}, with image_url: ${assignedCount}`,
     );
 
-    // TODO: we can reduce cost if we batch here
     const enriched = await describeVisualElements(finalElements);
 
     const visualCount = enriched.filter(

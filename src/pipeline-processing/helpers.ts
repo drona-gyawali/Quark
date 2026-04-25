@@ -14,8 +14,6 @@ import crypto from "node:crypto";
 import { marked } from "marked";
 import prompts from "./prompts.json" with { type: "json" };
 import { logger } from "../conf/logger.ts";
-import type { Key } from "../lib/lib.ts";
-import { createPresignedUrl } from "../service/object.ts";
 
 export const getStaticPrompt = (eleType: string) => {
   return eleType === "Image" ? DIAGRAM_TEXT : TABLE_TEXT;
@@ -184,7 +182,7 @@ export const nonStreamLLM = async (
       env.SUMMARIZER_AI_TOKEN,
       env.SUMMARIZER_AI_URL,
     ).chat.completions.create({
-      model: "gpt-4o-mini",
+      model: env.SUMMARIZER_MODEL,
       messages: [{ role: "user", content: contentPayload }],
       stream: false,
       temperature: 0.1,

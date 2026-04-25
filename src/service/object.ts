@@ -50,23 +50,28 @@ export const createPresignedUrl = async (genKey: Key, userId: string) => {
 
 export const getContentAccess = async ({
   key,
-  expiresIn = 300,
+  expiresIn = SIGNED_URL_EXPIRES,
 }: {
   key: string;
   expiresIn?: number;
 }) => {
   try {
     const command = new GetObjectCommand({
-      Bucket: process.env.OBJECT_NAME,
+      Bucket: env.OBJECT_NAME,
       Key: key,
     });
     const s3Client = storage();
+    if (!s3Client) {
+      logger.error(`S3 Client Initalization failed`);
+      throw new StorageException(`S3 Client Initalization failed`);
+    }
     const url = await getSignedUrl(s3Client, command, {
       expiresIn,
     });
 
     return url;
   } catch (error) {
+    logger.error(`Unable to create access link ${error}`);
     throw new StorageException(`Unable to create access link ${error}`);
   }
 };
