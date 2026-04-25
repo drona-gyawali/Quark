@@ -4,11 +4,9 @@ import { PipelineException, RetrivalExecption } from "./exec.ts";
 import { unstructured, env, embedding, memoClient } from "../conf/conf.ts";
 import {
   getStaticPrompt,
-  isBase64,
   prepareBatchRecords,
   htmlTableToMarkdown,
   sleep,
-  isDocumentElement,
   nonStreamLLM,
 } from "./helpers.ts";
 import type {
@@ -18,10 +16,11 @@ import type {
 } from "./pipeline.ts";
 import { dumpToDb, ensureCollectionExists } from "./vector-db.ts";
 import { EmbedRequestInputType } from "voyageai";
-import type { PartitionResponse } from "unstructured-client/sdk/models/operations";
 import { logger } from "../conf/logger.ts";
 import type { Stream } from "openai/streaming";
 import type { ChatCompletionChunk } from "openai/resources";
+import type { VisionResult, PartialDocumentElement } from "./pipeline.ts";
+import { getContentAccess } from "../service/object.ts";
 
 // TODO: remove the image , figure and Graphic from the block types
 export const partitionDocument = async (
@@ -49,7 +48,6 @@ export const partitionDocument = async (
   }
 };
 
-//
 export const describeVisualElements = async (
   elements: DocumentElement[],
 ): Promise<DocumentElement[]> => {
@@ -57,45 +55,42 @@ export const describeVisualElements = async (
     const processed = await Promise.all(
       elements.map((ele) =>
         limit(async () => {
-          const base64Image = ele.metadata?.image_base64;
+          const imageUrl = ele.metadata?.image_url;
           const tableHtml = ele.metadata?.text_as_html;
 
-          if (base64Image && typeof base64Image === "string") {
+          if (imageUrl) {
+            let description: string;
+
             try {
-              isBase64(base64Image, ele);
+              const signedUrl = await getContentAccess({
+                key: imageUrl,
+              });
 
               const promptType = ele.type === "Table" ? "Table" : "Image";
-              const description = await nonStreamLLM(
-                getStaticPrompt(promptType),
-                base64Image,
-              );
 
-              logger.debug(
-                `Visual analysis generated for ${ele.element_id} (len=${description.length})`,
-              );
-              return {
-                ...ele,
-                text: `${ele.text}\n\n[Visual Analysis]: ${description}`,
-                metadata: {
-                  ...ele.metadata,
-                  // TODO: s3 layer will save the image metadata.image.url ui stuff
-                  image_base64: "",
-                  visual_description: description.substring(0, 500),
-                },
-              };
+              description = await nonStreamLLM(getStaticPrompt(promptType), {
+                url: signedUrl,
+              });
+
+              logger.info(`Visual analysis generated for ${ele.element_id}`);
             } catch (err) {
               logger.error(
-                `[VISION ERROR] LLM failed for element ${ele.element_id} : ${err}`,
+                `[VISION ERROR] LLM failed for ${ele.element_id}: ${err}`,
               );
               return ele;
             }
-          }
 
+            return {
+              ...ele,
+              text: `${ele.text}\n\n[Visual Analysis]: ${description}`,
+              metadata: {
+                ...ele.metadata,
+                visual_description: description.substring(0, 500),
+              },
+            };
+          }
           if (tableHtml) {
             try {
-              logger.debug(
-                `[TABLE] Converting HTML to Markdown: ${ele.element_id}`,
-              );
               const tableMarkdown = await htmlTableToMarkdown(tableHtml);
 
               return {
@@ -108,7 +103,7 @@ export const describeVisualElements = async (
               };
             } catch (mdErr) {
               logger.error(
-                `[HTML-MD ERROR] Failed for ${ele.element_id} : ${mdErr}`,
+                `[HTML-MD ERROR] Failed for ${ele.element_id}: ${mdErr}`,
               );
               return ele;
             }
@@ -209,68 +204,39 @@ export const processMetadata = async (elements: DocumentElement[]) => {
 };
 
 export const visionMaker = (
-  raw: PartitionResponse,
-  localImages: Record<number, string[]>,
+  raw: PartialDocumentElement[],
+  visionResult: VisionResult,
   fileName: string,
-) => {
+): DocumentElement[] => {
   try {
-    if (typeof raw === "string") {
-      throw new PipelineException("Unexpected string response from partition");
-    }
     if (!Array.isArray(raw)) {
       throw new PipelineException("Partition did not return array of elements");
     }
-    if (!raw.every(isDocumentElement)) {
-      throw new PipelineException(
-        "Partition returned invalid element structure",
-      );
-    }
-    const elements: DocumentElement[] = raw.map((ele: any) => {
-      const pageNum = ele.metadata?.page_number;
-      // TODO: personally i am not ok with this compositeElement stuff i want soemthing more reliable way.
-      if (
-        ele.type === "CompositeElement" &&
-        localImages[pageNum] &&
-        localImages[pageNum].length > 0
-      ) {
-        return {
-          ...ele,
-          metadata: {
-            ...ele.metadata,
-            image_base64: localImages[pageNum].shift(),
-          },
-        };
-      }
-      return ele;
-    });
 
-    Object.entries(localImages).forEach(([page, imagesLeft]) => {
-      const pageNum = parseInt(page);
+    const elements: DocumentElement[] = raw.map((ele: any) => ({
+      ...ele,
+      text: ele.text?.trim() || "[TEXT_UNAVAILABLE]",
+    }));
 
-      // If there are still images left for this page (either Unstructured missed the page
-      // or there were more images than text blocks), add them as new elements.
-      if (!Array.isArray(imagesLeft) || imagesLeft.length === 0) return;
-      imagesLeft.forEach((base64, idx) => {
-        elements.push({
-          type: "Image",
-          element_id: `manual-p${pageNum}-${idx}`,
-          text: "",
-          metadata: {
-            page_number: pageNum,
-            image_base64: base64,
-            filename: fileName,
-          },
-        });
+    visionResult.images.forEach((img, idx) => {
+      elements.push({
+        type: "Image",
+        element_id: `vision-${img.page}-${idx}-${Date.now()}`,
+        text: "[IMAGE_CONTENT]",
+        metadata: {
+          page_number: img.page,
+          image_url: img.s3_key,
+          filename: fileName,
+        },
       });
     });
 
-    const finalElements = elements.sort(
-      (a, b) => (a.metadata?.page_number || 0) - (b.metadata?.page_number || 0),
+    return elements.sort(
+      (a, b) => (a.metadata?.page_number ?? 0) - (b.metadata?.page_number ?? 0),
     );
-    return finalElements;
   } catch (error) {
-    logger.error(`Vision maker has been crashed : ${error}`);
-    throw new PipelineException(`Vision maker has been crashed : ${error}`);
+    logger.error(`Vision maker crashed: ${error}`);
+    throw new PipelineException(`Vision maker crashed: ${error}`);
   }
 };
 

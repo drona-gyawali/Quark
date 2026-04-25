@@ -3,10 +3,12 @@ export interface DocumentElement {
   type: string;
   text?: string;
   metadata?: {
-    image_base64?: string;
+    image_url?: string;
     [key: string]: any;
   };
 }
+
+type PartialDocumentElement = Partial<DocumentElement>;
 
 export interface PartitionOutput {
   elements: DocumentElement[];
@@ -36,3 +38,11 @@ export interface ChatMessage {
   content: string;
   timestamp?: number;
 }
+
+export type VisionResult = {
+  doc_id: string;
+  images: {
+    page: number;
+    s3_key: string;
+  }[];
+};

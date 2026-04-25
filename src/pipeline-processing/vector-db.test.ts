@@ -201,7 +201,7 @@ describe("getRelevantContext", () => {
         text: "doc one",
         page_number: 1,
         isVisual: false,
-        imageUrl: null,
+        image_url: null,
       },
     },
     {
@@ -210,7 +210,7 @@ describe("getRelevantContext", () => {
         text: "doc two",
         page_number: 2,
         isVisual: true,
-        imageUrl: "https://example.com/img.png",
+        image_url: "https://example.com/img.png",
       },
     },
   ];
@@ -374,7 +374,7 @@ describe("getRelevantContext", () => {
           text: "important content",
           page_number: 3,
           isVisual: false,
-          imageUrl: "https://s3.example.com/img.jpg",
+          image_url: "https://s3.example.com/img.jpg",
         },
       },
     ]);

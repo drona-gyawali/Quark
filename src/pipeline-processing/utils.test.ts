@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, vi, afterEach } from "vitest";
 
 vi.mock("../conf/conf.ts", () => ({
   unstructured: vi.fn(),
@@ -55,16 +55,56 @@ vi.mock("../conf/logger.ts", () => ({
   },
 }));
 
-/* ---------------- IMPORTS ---------------- */
+// ✅ FIX: mock getContentAccess which describeVisualElements calls internally
+vi.mock("../service/object.ts", () => ({
+  getContentAccess: vi.fn(async () => "https://signed-url.example.com"),
+}));
 
-import { describeVisualElements, reRank, mem0Search, mem0Add } from "./utils";
+/* =====================================================
+   IMPORT AFTER MOCKS
+===================================================== */
 
-import { memoClient, embedding } from "../conf/conf";
-import { nonStreamLLM, htmlTableToMarkdown, getStaticPrompt } from "./helpers";
+import {
+  describeVisualElements,
+  reRank,
+  mem0Search,
+  mem0Add,
+} from "./utils.ts";
 
-/* ---------------- HELPERS ---------------- */
+// ✅ FIX: import mocked helpers so we can spy on them
+import {
+  nonStreamLLM,
+  getStaticPrompt,
+  htmlTableToMarkdown,
+} from "./helpers.ts";
 
-const makeImg = () => "iVBORw0KGgoAAA";
+// ✅ FIX: import mocked conf exports so vi.mocked() works on them
+import { embedding, memoClient } from "../conf/conf.ts";
+
+/* =====================================================
+   HELPERS
+===================================================== */
+
+const makeImg = () => "s3-image-key";
+
+const imageElement = () => ({
+  type: "Image",
+  element_id: "img-1",
+  text: "hello",
+  metadata: {
+    image_url: makeImg(),
+  },
+});
+
+const tableElement = () => ({
+  type: "Table",
+  element_id: "tbl-1",
+  text: "",
+  metadata: {
+    image_url: makeImg(),
+    text_as_html: "<table></table>",
+  },
+});
 
 /* =====================================================
    describeVisualElements
@@ -73,95 +113,56 @@ const makeImg = () => "iVBORw0KGgoAAA";
 describe("describeVisualElements", () => {
   afterEach(() => vi.clearAllMocks());
 
-  it("calls LLM when image_base64 exists", async () => {
-    const elements = [
-      {
-        type: "Image",
-        text: "hello",
-        metadata: { image_base64: makeImg() },
-      },
-    ];
-
-    const res = await describeVisualElements(elements as any);
+  it("calls LLM when image_url exists", async () => {
+    // ✅ FIX: call without second DI arg; use imported mocked functions
+    const res = await describeVisualElements([imageElement()] as any);
 
     expect(nonStreamLLM).toHaveBeenCalledOnce();
-    expect(res[0].text).toContain("Visual Analysis");
-    expect(res[0].metadata.image_base64).toBe("");
+    expect(res[0].text).toContain("[Visual Analysis]");
     expect(res[0].metadata.visual_description).toBeDefined();
   });
 
   it("truncates visual_description", async () => {
+    // ✅ FIX: use vi.mocked() on the imported mock
     vi.mocked(nonStreamLLM).mockResolvedValueOnce("X".repeat(600));
 
-    const elements = [
-      {
-        type: "Image",
-        text: "",
-        metadata: { image_base64: makeImg() },
-      },
-    ];
-
-    const res = await describeVisualElements(elements as any);
+    const res = await describeVisualElements([imageElement()] as any);
 
     expect(res[0].metadata.visual_description.length).toBe(500);
   });
 
   it("uses Table prompt", async () => {
-    const elements = [
-      {
-        type: "Table",
-        text: "",
-        metadata: { image_base64: makeImg() },
-      },
-    ];
-
-    await describeVisualElements(elements as any);
+    await describeVisualElements([tableElement()] as any);
 
     expect(getStaticPrompt).toHaveBeenCalledWith("Table");
   });
 
   it("uses Image prompt", async () => {
-    const elements = [
-      {
-        type: "Figure",
-        text: "",
-        metadata: { image_base64: makeImg() },
-      },
-    ];
-
-    await describeVisualElements(elements as any);
+    await describeVisualElements([imageElement()] as any);
 
     expect(getStaticPrompt).toHaveBeenCalledWith("Image");
   });
 
   it("converts HTML table", async () => {
-    const elements = [
+    const res = await describeVisualElements([
       {
         type: "Table",
+        element_id: "t1",
         text: "",
-        metadata: { text_as_html: "<table/>" },
+        metadata: {
+          // no image_url so it falls through to HTML path
+          text_as_html: "<table></table>",
+        },
       },
-    ];
-
-    const res = await describeVisualElements(elements as any);
+    ] as any);
 
     expect(htmlTableToMarkdown).toHaveBeenCalled();
     expect(res[0].text).toContain("Structured Table Data");
   });
 
   it("prefers image over HTML", async () => {
-    const elements = [
-      {
-        type: "Table",
-        text: "",
-        metadata: {
-          image_base64: makeImg(),
-          text_as_html: "<table/>",
-        },
-      },
-    ];
-
-    await describeVisualElements(elements as any);
+    // tableElement has both image_url and text_as_html
+    await describeVisualElements([tableElement()] as any);
 
     expect(nonStreamLLM).toHaveBeenCalledOnce();
     expect(htmlTableToMarkdown).not.toHaveBeenCalled();
@@ -176,23 +177,29 @@ describe("reRank", () => {
   afterEach(() => vi.clearAllMocks());
 
   it("calls rerank correctly", async () => {
-    const mock = vi.fn().mockResolvedValue("ok");
+    const rerankMock = vi.fn().mockResolvedValue("ok");
 
+    // ✅ FIX: use vi.mocked() on the imported `embedding`
     vi.mocked(embedding).mockReturnValue({
-      rerank: mock,
+      rerank: rerankMock,
     } as any);
 
     const res = await reRank("q", ["a"]);
 
-    expect(mock).toHaveBeenCalled();
+    expect(rerankMock).toHaveBeenCalled();
     expect(res).toBe("ok");
   });
 });
+
+/* =====================================================
+   mem0Search
+===================================================== */
 
 describe("mem0Search", () => {
   afterEach(() => vi.clearAllMocks());
 
   it("calls search correctly", async () => {
+    // ✅ FIX: use vi.mocked() on imported `memoClient`
     vi.mocked(memoClient.search).mockResolvedValue([] as any);
 
     await mem0Search({ message: "hi", userId: "u1" });
