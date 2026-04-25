@@ -72,7 +72,7 @@ export const getRelevantContext = async (
       page: hit.payload?.page_number || hit.payload?.pageNumber,
       isVisual: hit.payload?.isVisual === true || hit.payload?.type === "Image",
       // TODO: S3 intergration to show the image in ui.
-      imageUrl: hit.payload?.imageUrl || null,
+      imageUrl: hit.payload?.image_url || null,
     }));
     const docText = doc.map((d) => d.text);
     const reRankedRes = await reRank(query, docText);

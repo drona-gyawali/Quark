@@ -164,10 +164,13 @@ async def process_pdf():
         if images
     ]
 
-    pages_results = await asyncio.gather(*upload_tasks)
+    pages_results = await asyncio.gather(*upload_tasks, return_exceptions=True)
 
     results = []
     for r in pages_results:
+        if(isinstance(r, Exception)):
+            print(f"[ERROR] Page upload failed: {r}", file=sys.stderr)
+            continue
         results.extend(r)
 
     return json.dumps({"doc_id": doc_id, "images": results})
