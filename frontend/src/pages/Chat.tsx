@@ -388,7 +388,7 @@ export default function ChatPage() {
             <TextareaAutosize
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Ask anything about you docs..."
+              placeholder="Ask anything about your docs..."
               minRows={1}
               maxRows={8}
               className="flex-1 bg-transparent py-3 px-1 focus:outline-none resize-none text-[15.5px] leading-relaxed placeholder-zinc-500 text-zinc-200 scrollbar-none"
@@ -425,7 +425,8 @@ export default function ChatPage() {
           </div>
 
           <p className="text-center text-[10px] text-zinc-500 mt-3">
-            Quark is an AI can make mistakes. Consider checking important info.
+            Quark is an AI and can make mistakes. Consider checking important
+            info.
           </p>
         </div>
       </div>

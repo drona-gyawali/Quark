@@ -68,8 +68,6 @@ export default function App() {
             </ProtectedRoute>
           }
         />
-
-        <Route path="*" element={<ErrorPage />} />
       </Routes>
     </Suspense>
   );

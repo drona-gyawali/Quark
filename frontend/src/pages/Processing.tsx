@@ -39,8 +39,8 @@ export function Processing() {
               <p className="text-[13px] text-zinc-300 leading-relaxed">
                 <span className="font-bold text-white mr-1">Beta Notice:</span>
                 Due to limited compute resources, processing may take a few
-                minutes. You can safely leave this page. we'll inform you the
-                status via an email.
+                minutes. You can safely leave this page, Quark Team will email
+                you when it's ready.
               </p>
             </div>
           </div>
@@ -125,12 +125,18 @@ export function Processing() {
                         Ready for querying
                       </span>
                     </div>
-                    <Link
-                      to={`/c/${data?.session_id}`}
-                      className="flex items-center gap-2 text-xs font-bold text-black bg-white hover:bg-zinc-200 px-4 py-2 rounded-md transition-all"
-                    >
-                      Open Chat <ExternalLink className="w-3 h-3" />
-                    </Link>
+                    {data?.session_id ? (
+                      <Link
+                        to={`/c/${data?.session_id}`}
+                        className="flex items-center gap-2 text-xs font-bold text-black bg-white hover:bg-zinc-200 px-4 py-2 rounded-md transition-all"
+                      >
+                        Open Chat <ExternalLink className="w-3 h-3" />
+                      </Link>
+                    ) : (
+                      <span className="text-xs text-zinc-500 font-mono">
+                        session unavailable
+                      </span>
+                    )}
                   </div>
                 ) : (
                   <div className="space-y-4">
