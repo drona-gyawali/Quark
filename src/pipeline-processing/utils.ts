@@ -5,7 +5,6 @@ import { unstructured, env, embedding, memoClient } from "../conf/conf.ts";
 import {
   getStaticPrompt,
   isBase64,
-  llmResponse,
   prepareBatchRecords,
   htmlTableToMarkdown,
   sleep,
@@ -71,6 +70,9 @@ export const describeVisualElements = async (
                 base64Image,
               );
 
+              logger.debug(
+                `Visual analysis generated for ${ele.element_id} (len=${description.length})`,
+              );
               return {
                 ...ele,
                 text: `${ele.text}\n\n[Visual Analysis]: ${description}`,
@@ -118,8 +120,10 @@ export const describeVisualElements = async (
     );
 
     return processed;
-  } catch (error: any) {
-    throw new PipelineException(`Visual processing failed: ${error.message}`);
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : String(error);
+    logger.error(`Visual processing failed: ${msg}`);
+    throw new PipelineException(`Visual processing failed: ${msg}`);
   }
 };
 

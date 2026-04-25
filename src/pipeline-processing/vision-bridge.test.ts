@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
 import { EventEmitter } from "events";
 import path from "path";
+import fs from "fs";
 
 vi.mock("child_process", () => ({
   spawn: vi.fn(),
@@ -84,11 +85,12 @@ describe("getLocalImages", () => {
   });
 
   it("spawns python from venv/bin/python", async () => {
+    const existsSpy = vi.spyOn(fs, "existsSync").mockReturnValue(true);
     simulateProcess(["{}"], [], 0);
     await getLocalImages("/tmp/test.pdf");
-
     const spawnCall = vi.mocked(spawn).mock.calls[0];
     expect(spawnCall[0]).toContain(path.join("venv", "bin", "python"));
+    existsSpy.mockRestore();
   });
 
   it("passes vision-worker.py as the first python argument", async () => {
