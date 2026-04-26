@@ -53,7 +53,7 @@ export function AppSidebar() {
             <Button
               variant="default"
               onClick={handleSession}
-              disabled={isPending}
+              disabled={isPending || !historyItems || historyItems?.length == 0}
               className="w-full justify-start gap-2 shadow-sm cursor-pointer"
             >
               {isPending ? (

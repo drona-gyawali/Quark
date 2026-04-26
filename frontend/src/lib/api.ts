@@ -87,7 +87,7 @@ export const createSession = async (meta: sessionProcess) => {
 export const getSession = async () => {
   try {
     const getSession = await PrivateApi.get("/session");
-    return getSession.data;
+    return getSession.data as [];
   } catch (error) {
     throw error;
   }
