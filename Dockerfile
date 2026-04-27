@@ -1,25 +1,25 @@
 FROM node:20-alpine
 
-# install python (for bin/vision-worker.py)
+# install python
 RUN apk add --no-cache python3 py3-pip
 
 WORKDIR /app
 
-# install node deps
+# install node deps + patches
 COPY package*.json ./
+COPY patches ./patches
 RUN npm install
 
-# install python deps (safe even if empty)
+# install python deps (FIXED)
 COPY requirements.txt .
-RUN pip3 install --no-cache-dir -r requirements.txt || true
+RUN pip3 install --no-cache-dir --break-system-packages -r requirements.txt
 
-# copy full project
+# copy project
 COPY . .
 
-# build typescript
+# build
 RUN npm run build
 
 EXPOSE 3000
 
-# START API SERVER ONLY
 CMD ["node", "dist/index.js"]
