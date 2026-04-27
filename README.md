@@ -1,3 +1,5 @@
+> Notice: This application is designed with a microservice architecture consisting of three distinct services: Ingestion, Retrieval, and Email. Due to the high cost of cloud-hosting a multi-service stack, a live web demo is not currently available. However, you can easily self-host the application by following the commands below. If you encounter any issues during the setup, please feel free to open an issue.
+
 <p align="center">
 <img width="246" height="73" alt="image" src="https://github.com/user-attachments/assets/6fe31791-471d-4fa8-bddc-9c6826911663" />
 
