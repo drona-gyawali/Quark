@@ -1,0 +1,17 @@
+version: "3.9"
+
+services:
+
+  api:
+    build: .
+    command: ["node", "dist/index.js"]
+    ports:
+      - "3000:3000"
+
+  ingestion-worker:
+    build: .
+    command: ["node", "dist/workers/ingestion-worker.js"]
+
+  chat-worker:
+    build: .
+    command: ["node", "dist/workers/chat-queue-worker.js"]
