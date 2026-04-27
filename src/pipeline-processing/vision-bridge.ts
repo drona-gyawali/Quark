@@ -14,79 +14,65 @@ export const getLocalImages = (
   images: { page: number; s3_key: string }[];
 }> => {
   return new Promise((resolve, reject) => {
-    const projectRoot =
-      process.env.QUARK_ROOT || path.resolve(__dirname, "../../");
+    try {
+      const projectRoot =
+        process.env.QUARK_ROOT || path.resolve(__dirname, "../../");
 
-    const venvPath =
-      process.platform === "win32"
-        ? path.join(projectRoot, "venv", "Scripts", "python.exe")
-        : path.join(projectRoot, "venv", "bin", "python");
+      const pythonPath = process.env.PYTHON_BIN || "python3";
 
-    const envPython = process.env.PYTHON_BIN;
+      const scriptPath = path.join(projectRoot, "bin", "vision-worker.py");
 
-    let pythonPath: string;
-    let isFallbackPython3 = false;
+      logger.debug(`[CONFIG]: Using Python at: ${pythonPath}`);
+      logger.debug(`[CONFIG]: Using Script at: ${scriptPath}`);
 
-    if (envPython) {
-      pythonPath = envPython;
-    } else if (fs.existsSync(venvPath)) {
-      pythonPath = venvPath;
-    } else {
-      pythonPath = "python3";
-      isFallbackPython3 = true;
-    }
+      if (!fs.existsSync(scriptPath)) {
+        const error = `Vision worker script not found at: ${scriptPath}`;
+        logger.error(`[CONFIG ERROR]: ${error}`);
+        return reject(new Error(error));
+      }
 
-    const scriptPath = path.join(projectRoot, "bin", "vision-worker.py");
+      const pythonProcess = spawn(pythonPath, [scriptPath]);
 
-    logger.debug(`[CONFIG]: Using Python at: ${pythonPath}`);
-    logger.debug(`[CONFIG]: Using Script at: ${scriptPath}`);
+      let dataString = "";
+      let errorString = "";
 
-    // --- Validation ---
-    // Only skip existence check if it's our fallback "python3"
-    if (!isFallbackPython3 && !fs.existsSync(pythonPath)) {
-      const error = `Python binary not found at: ${pythonPath}`;
-      logger.error(`[CONFIG ERROR]: ${error}`);
-      return reject(new Error(error));
-    }
+      pythonProcess.stdin.write(fileBuffer);
+      pythonProcess.stdin.end();
 
-    if (!fs.existsSync(scriptPath)) {
-      const error = `Vision worker script not found at: ${scriptPath}`;
-      logger.error(`[CONFIG ERROR]: ${error}`);
-      return reject(new Error(error));
-    }
+      pythonProcess.stdout.on("data", (data) => {
+        dataString += data.toString();
+      });
 
-    // --- Spawn Python Process ---
-    const pythonProcess = spawn(pythonPath, [scriptPath]);
+      pythonProcess.stderr.on("data", (data) => {
+        errorString += data.toString();
+      });
 
-    let dataString = "";
-    let errorString = "";
+      pythonProcess.on("error", (err) => {
+        logger.error(`[SPAWN ERROR]: ${err.message}`);
+        reject(new Error(`Failed to start Python process: ${err.message}`));
+      });
 
-    pythonProcess.stdin.write(fileBuffer);
-    pythonProcess.stdin.end();
+      pythonProcess.on("close", (code) => {
+        if (code !== 0) {
+          logger.error(`[PYTHON ERROR]: ${errorString}`);
+          return reject(
+            new Error(
+              `Python process exited with code ${code}: ${errorString}`,
+            ),
+          );
+        }
 
-    pythonProcess.stdout.on("data", (data) => {
-      dataString += data.toString();
-    });
-
-    pythonProcess.stderr.on("data", (data) => {
-      errorString += data.toString();
-    });
-
-    pythonProcess.on("close", (code) => {
-      if (code !== 0) {
-        logger.error(`[PYTHON ERROR]: ${errorString}`);
-        reject(
-          new Error(`Python process exited with code ${code}: ${errorString}`),
-        );
-      } else {
         try {
           const parsed = JSON.parse(dataString);
           resolve(parsed);
-        } catch {
+        } catch (err) {
           logger.error(`[PARSING ERROR]: Data was: ${dataString}`);
           reject(new Error("Failed to parse Python output as JSON"));
         }
-      }
-    });
+      });
+    } catch (err: any) {
+      logger.error(`[UNEXPECTED ERROR]: ${err.message}`);
+      reject(err);
+    }
   });
 };
