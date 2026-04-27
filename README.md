@@ -12,7 +12,12 @@ A high-performance RAG (Retrieval-Augmented Generation) system designed for deep
 <img width="1124" height="610" alt="image" src="https://github.com/user-attachments/assets/a54549e5-ddef-4392-bfeb-7b5fe8325d24" />
 
 ---
+## Demo Video: Processing ingestion and retrieval layers in one app.
 
+> Note: This demo was recorded on a low-specification system. While the ingestion and retrieval layers are highly optimized for multi-threading and asynchronous processing, the hardware limitations may impact perceived speed. On high-performance systems, these operations are significantly faster.
+
+> https://github.com/user-attachments/assets/dcf07530-a134-45db-9f93-ac8cef77bffd
+---
 ## Architecture Overview
 
 Quark distinguishes itself through a multi-stage pipeline:
