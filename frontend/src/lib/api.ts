@@ -96,7 +96,10 @@ export const getSession = async () => {
 export const deleteSession = async (sessionId: string) => {
   try {
     const delSession = await PrivateApi.delete(`/session/${sessionId}`);
-    return delSession.data;
+    if (delSession.status == 204) {
+      return true;
+    }
+    return false;
   } catch (error) {
     throw error;
   }

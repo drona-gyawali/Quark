@@ -15,17 +15,27 @@ import {
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
+  SidebarMenuAction,
 } from "@/components/ui/sidebar";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { useQuery } from "@tanstack/react-query";
-import { getSession } from "@/lib/api";
+import { useQueryClient, useMutation, useQuery } from "@tanstack/react-query";
+import { getSession, deleteSession } from "@/lib/api";
 import { formatDistanceToNow } from "date-fns";
 import { useCreateSession } from "@/hooks/use-create-session";
 import { createIds } from "@/lib/utils";
-import { Loader2 } from "lucide-react";
+import { Loader2, Trash2, MoreVertical } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export function AppSidebar() {
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const {
     data: historyItems,
     isLoading,
@@ -36,6 +46,25 @@ export function AppSidebar() {
   });
 
   const { mutate, isPending } = useCreateSession();
+
+  const { mutate: _deleteSession } = useMutation({
+    mutationFn: async (sessionId: string) => {
+      const data = await deleteSession(sessionId);
+      if (!data) {
+        throw new Error(`Session unable to deleted`);
+      }
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["chat-history"] });
+    },
+    onError: () => {
+      navigate(`/something-went-wrong`);
+    },
+  });
+  const handleDeleteSession = (sessionId: string) => {
+    _deleteSession(sessionId);
+  };
 
   const handleSession = () => {
     mutate(createIds());
@@ -110,6 +139,23 @@ export function AppSidebar() {
                           </span>
                         </Link>
                       </SidebarMenuButton>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <SidebarMenuAction className=" cursor-pointer hover:bg-sidebar-accent focus-visible:ring-0 focus-visible:ring-offset-0">
+                            <MoreVertical className="h-4 w-4" />
+                            <span className="sr-only">More</span>
+                          </SidebarMenuAction>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent side="right" align="start">
+                          <DropdownMenuItem
+                            onClick={() => handleDeleteSession(chat.id)}
+                            className="text-destructive focus:text-destructive cursor-pointer"
+                          >
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            <span>Delete Chat</span>
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </SidebarMenuItem>
                   ))}
               </SidebarMenu>
