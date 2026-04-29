@@ -22,6 +22,9 @@ A high-performance RAG (Retrieval-Augmented Generation) system designed for deep
 ---
 ## Architecture Overview
 
+> <img width="953" height="399" alt="image" src="https://github.com/user-attachments/assets/0d1f5226-4034-49a2-91b3-8abffb745c8a" />
+
+
 Quark distinguishes itself through a multi-stage pipeline:
 
 #### Multimodal Ingestion
@@ -61,7 +64,7 @@ We provide a setup script to handle dependency installation and environment chec
     ```
 
 ### 2. Configure Environment Variables
-Before  launching the cli, you must set up your credentials. inside a `.env` file in the root directory and populate it with your API keys
+Before  launching the web app, you must set up your credentials. inside a `.env` file in the root directory and populate it with your API keys
 
 ### 3. Launching the Ingestion worker in seperate process
 ```bash
@@ -81,13 +84,6 @@ cd frontend
 npm install
 npm run dev
 ```
-
-> Interface
-
-> <img width="1362" height="621" alt="image" src="https://github.com/user-attachments/assets/59b0c185-8de0-482b-b566-a34d350913ec" />
-
-> <img width="1364" height="619" alt="image" src="https://github.com/user-attachments/assets/b1ffa57a-1a98-4196-9720-c90f2bc08c33" />
-
 ---
 
 ###  Summary 
